@@ -138,6 +138,7 @@ if (ENABLE_REMINDERS) {
     }
   });
   console.log('Reminders enabled (cron scheduled).');
+}
 
 // ---------------------------
 // Lancement du serveur
