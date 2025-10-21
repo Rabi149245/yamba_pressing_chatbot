@@ -17,7 +17,10 @@ async function sendText(to, text) {
   }
   try {
     const payload = { messaging_product: 'whatsapp', to, text: { body: text } };
-    const res = await axios.post(API_URL, payload, { headers: { Authorization: `Bearer ${TOKEN}`, 'Content-Type': 'application/json' }, timeout: 15000 });
+    const res = await axios.post(API_URL, payload, { 
+      headers: { Authorization: `Bearer ${TOKEN}`, 'Content-Type': 'application/json' },
+      timeout: 15000 
+    });
     return res.status === 200 || res.status === 201;
   } catch (err) {
     console.error('WhatsApp send error:', err.response?.data || err.message);
@@ -40,7 +43,6 @@ export async function handleIncomingMessage(message) {
     // 1️⃣ Redirection vers un agent humain
     if (low === 'humain' || low === 'parlez à humain') {
       await sendText(from, "Un agent humain va prendre en charge votre demande. ⏳");
-      // Notifier l'admin
       if (ADMIN_PHONE) {
         await sendText(ADMIN_PHONE, `Nouvelle demande d'assistance de ${from}`);
       }
