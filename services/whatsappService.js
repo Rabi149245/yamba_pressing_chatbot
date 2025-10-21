@@ -98,3 +98,4 @@ export async function handleIncomingMessage(message) {
 
   await sendText(from, 'Type de message non géré. Souhaitez-vous parler à un agent ? Tapez "humain".');
 }
+export { sendText, handleIncomingMessage };
