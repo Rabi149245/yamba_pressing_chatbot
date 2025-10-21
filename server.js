@@ -174,5 +174,4 @@ if (ENABLE_REMINDERS) {
 // ---------------------------
 // Lancement du serveur
 // ---------------------------
-console.log("ADMIN_PHONE =", process.env.ADMIN_PHONE);
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
