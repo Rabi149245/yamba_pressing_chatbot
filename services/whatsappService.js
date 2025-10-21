@@ -4,6 +4,10 @@ import { sendToMakeWebhook } from './makeService.js';
 
 const TOKEN = process.env.WHATSAPP_TOKEN;
 const PHONE_ID = process.env.WHATSAPP_PHONE_ID;
+const ADMIN_PHONE = process.env.ADMIN_PHONE.replace(/[\s\-+]/g, '').startsWith('226')
+  ? process.env.ADMIN_PHONE.replace(/[\s\-+]/g, '')
+  : '226' + process.env.ADMIN_PHONE.replace(/[\s\-+]/g, '');
+
 const API_URL = PHONE_ID ? `https://graph.facebook.com/v17.0/${PHONE_ID}/messages` : null;
 
 async function sendText(to, text) {
@@ -24,6 +28,7 @@ async function sendText(to, text) {
 export async function handleIncomingMessage(message) {
   const from = message.from;
   if (!from) return;
+
   if (process.env.MAKE_WEBHOOK_URL) {
     try { await sendToMakeWebhook({incoming: message}, 'incoming_message'); } catch(e){}
   }
@@ -32,6 +37,17 @@ export async function handleIncomingMessage(message) {
     const body = message.text.body.trim();
     const low = body.toLowerCase();
 
+    // 1️⃣ Redirection vers un agent humain
+    if (low === 'humain' || low === 'parlez à humain') {
+      await sendText(from, "Un agent humain va prendre en charge votre demande. ⏳");
+      // Notifier l'admin
+      if (ADMIN_PHONE) {
+        await sendText(ADMIN_PHONE, `Nouvelle demande d'assistance de ${from}`);
+      }
+      return;
+    }
+
+    // 2️⃣ Catalogue
     if (['catalogue','tarif','prix'].includes(low)) {
       const cat = await readCatalog();
       const lines = cat.map(i => `${i.N} - ${i.Désignation}: NE ${i.NE || '-'} | NS ${i.NS || '-'} | REP ${i.REP || '-'}`);
@@ -39,6 +55,7 @@ export async function handleIncomingMessage(message) {
       return;
     }
 
+    // 3️⃣ Commande
     if (body.includes(',')) {
       const parts = body.split(',').map(p => p.trim());
       if (parts.length >= 3 && /^\d+$/.test(parts[0]) && /^\d+$/.test(parts[2])) {
@@ -60,6 +77,7 @@ export async function handleIncomingMessage(message) {
       }
     }
 
+    // 4️⃣ Localisation
     if (message.location) {
       const { latitude, longitude, address } = message.location;
       if (process.env.MAKE_WEBHOOK_URL) {
@@ -71,7 +89,8 @@ export async function handleIncomingMessage(message) {
       return;
     }
 
-    await sendText(from, "Bienvenue! Tapez 'catalogue' ou envoyez 'N, NE/NS/REP, qty' pour commander.");
+    // 5️⃣ Message par défaut
+    await sendText(from, "Bienvenue! Tapez 'catalogue', envoyez 'N, NE/NS/REP, qty' pour commander ou 'humain' pour parler à un agent.");
     return;
   }
 
