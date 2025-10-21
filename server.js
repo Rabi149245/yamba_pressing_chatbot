@@ -8,9 +8,6 @@ import { sendToMakeWebhook } from './services/makeService.js';
 import { readCatalog } from './services/orderService.js';
 import { checkAndSendReminders } from './services/reminderService.js';
 
-import { sendText } from './services/whatsappService.js';
-
-
 // ---------------------------
 // Vérification des variables critiques
 // ---------------------------
@@ -141,23 +138,6 @@ if (ENABLE_REMINDERS) {
     }
   });
   console.log('Reminders enabled (cron scheduled).');
-}
-
-
-app.post('/send-whatsapp', async (req, res) => {
-  const { to, message } = req.body;
-  if (!to || !message) return res.status(400).json({error:'Missing "to" or "message"'});
-
-  try {
-    const result = await sendText(to, message);
-    if (result) return res.json({status:'ok', message:'Message envoyé ✅'});
-    else return res.status(500).json({status:'error', message:'Erreur lors de l\'envoi du message'});
-  } catch (err) {
-    return res.status(500).json({status:'error', message: err.message});
-  }
-});
-
-
 
 // ---------------------------
 // Lancement du serveur
