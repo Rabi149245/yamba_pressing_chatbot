@@ -8,6 +8,9 @@ import { sendToMakeWebhook } from './services/makeService.js';
 import { readCatalog } from './services/orderService.js';
 import { checkAndSendReminders } from './services/reminderService.js';
 
+import { sendText } from './services/whatsappService.js';
+
+
 // ---------------------------
 // Vérification des variables critiques
 // ---------------------------
@@ -146,8 +149,6 @@ app.post('/send-whatsapp', async (req, res) => {
   if (!to || !message) return res.status(400).json({error:'Missing "to" or "message"'});
 
   try {
-    // importer sendText depuis whatsappService.js
-    import { sendText } from './services/whatsappService.js';
     const result = await sendText(to, message);
     if (result) return res.json({status:'ok', message:'Message envoyé ✅'});
     else return res.status(500).json({status:'error', message:'Erreur lors de l\'envoi du message'});
@@ -155,6 +156,7 @@ app.post('/send-whatsapp', async (req, res) => {
     return res.status(500).json({status:'error', message: err.message});
   }
 });
+
 
 
 // ---------------------------
