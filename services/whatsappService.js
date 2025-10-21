@@ -28,7 +28,7 @@ async function sendText(to, text) {
   }
 }
 
-export async function handleIncomingMessage(message) {
+async function handleIncomingMessage(message) {
   const from = message.from;
   if (!from) return;
 
