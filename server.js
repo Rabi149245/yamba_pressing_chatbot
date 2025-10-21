@@ -20,11 +20,6 @@ if (!process.env.MAKE_WEBHOOK_URL) {
 // Déclaration des variables
 // ---------------------------
 const PORT = process.env.PORT || 5000;
-const WHATSAPP_TOKEN = process.env.WHATSAPP_TOKEN;
-const WHATSAPP_PHONE_ID = process.env.WHATSAPP_PHONE_ID;
-const VERIFY_TOKEN = process.env.VERIFY_TOKEN;
-const ADMIN_SECRET = process.env.ADMIN_SECRET;
-const ADMIN_PHONE = process.env.ADMIN_PHONE;
 const ENABLE_REMINDERS = process.env.ENABLE_REMINDERS === "true";
 
 // ---------------------------
@@ -59,7 +54,7 @@ app.get('/webhook', (req, res) => {
   const token = req.query['hub.verify_token'];
   const challenge = req.query['hub.challenge'];
   if (mode && token) {
-    if (mode === 'subscribe' && token === VERIFY_TOKEN) {
+    if (mode === 'subscribe' && token === process.env.VERIFY_TOKEN) {
       console.log('WEBHOOK_VERIFIED');
       return res.status(200).send(challenge);
     } else {
@@ -73,7 +68,9 @@ app.post('/webhook', async (req, res) => {
   try {
     const body = req.body;
     if (process.env.MAKE_WEBHOOK_URL) {
-      try { await sendToMakeWebhook({event:'incoming_message', payload: body}, 'incoming_message'); } catch(e){ console.warn('Make forward failed', e.message); }
+      try { 
+        await sendToMakeWebhook({event:'incoming_message', payload: body}, 'incoming_message'); 
+      } catch(e){ console.warn('Make forward failed', e.message); }
     }
     const entry = body.entry?.[0];
     const change = entry?.changes?.[0];
@@ -88,6 +85,7 @@ app.post('/webhook', async (req, res) => {
   }
 });
 
+// Routes supplémentaires (pickup, commande, promotions, fidélité)
 app.post('/pickup', async (req, res) => {
   const { phone, lat, lon, address } = req.body;
   if (!process.env.MAKE_WEBHOOK_URL) return res.status(500).json({error:'Make webhook not configured'});
@@ -103,7 +101,7 @@ app.post('/commande', async (req, res) => {
   const body = req.body;
   try {
     await sendToMakeWebhook({event:'create_order', payload: body}, 'create_order');
-    return res.json({status:'ok', message:'order forwarded to Make'});
+    return res.json({status:'ok', message:'Order forwarded to Make'});
   } catch(err) {
     return res.status(500).json({status:'error', error: err.message});
   }
@@ -125,35 +123,6 @@ app.post('/fidelite', async (req, res) => {
   } catch(e) {
     return res.status(500).json({error:e.message});
   }
-});
-
-app.get('/admin/clients', async (req, res) => {
-  const secret = req.header('X-ADMIN-SECRET');
-  if (!secret || secret !== ADMIN_SECRET) return res.status(403).json({error:'forbidden'});
-  try {
-    await sendToMakeWebhook({event:'list_clients'}, 'list_clients');
-    return res.json({status:'requested'});
-  } catch(e){ return res.status(500).json({error:e.message}); }
-});
-
-app.post('/admin/create_promo', async (req, res) => {
-  const secret = req.header('X-ADMIN-SECRET');
-  if (!secret || secret !== ADMIN_SECRET) return res.status(403).json({error:'forbidden'});
-  const payload = req.body;
-  try {
-    await sendToMakeWebhook({event:'create_promo', payload}, 'create_promo');
-    return res.json({status:'requested', promo: payload});
-  } catch(e){ return res.status(500).json({error:e.message}); }
-});
-
-app.post('/admin/mark_ready', async (req, res) => {
-  const secret = req.header('X-ADMIN-SECRET');
-  if (!secret || secret !== ADMIN_SECRET) return res.status(403).json({error:'forbidden'});
-  const payload = req.body;
-  try {
-    await sendToMakeWebhook({event:'mark_ready', payload}, 'mark_ready');
-    return res.json({status:'requested', order_id: payload.order_id});
-  } catch(e){ return res.status(500).json({error:e.message}); }
 });
 
 // ---------------------------
