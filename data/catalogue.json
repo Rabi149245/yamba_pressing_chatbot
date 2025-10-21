@@ -1,0 +1,452 @@
+[
+  {
+    "N": 1,
+    "Désignation": "Bonnet",
+    "NE": 250,
+    "NS": 400,
+    "REP": null,
+    "Image_URL": "https://drive.google.com/uc?id=1F3t19q_K_96UyUv8zijt0Se9i07icK3u",
+    "Catégorie": "Autre"
+  },
+  {
+    "N": 2,
+    "Désignation": "Boubou Femme/Homme Bazin",
+    "NE": 900,
+    "NS": 1600,
+    "REP": 300,
+    "Image_URL": "https://drive.google.com/uc?id=1MBGQL9438YK7y1XqTqlnH8R-Q6YBSJCe",
+    "Catégorie": "Autre"
+  },
+  {
+    "N": 3,
+    "Désignation": "Boubou Femme/Homme Faso Danfani",
+    "NE": 800,
+    "NS": 1500,
+    "REP": 300,
+    "Image_URL": "https://drive.google.com/uc?id=1nLBuSjV5mCjnf5JT0qnKh0o6H-ry1BxS",
+    "Catégorie": "Autre"
+  },
+  {
+    "N": 4,
+    "Désignation": "Boubou Femme/Homme Pagne/Tissu",
+    "NE": 600,
+    "NS": 1000,
+    "REP": 300,
+    "Image_URL": "https://drive.google.com/uc?id=1EG0nPdxsWLyA5N19KTFpuxfsVjrNFAff",
+    "Catégorie": "Autre"
+  },
+  {
+    "N": 5,
+    "Désignation": "Bourgeon/Pullover",
+    "NE": 750,
+    "NS": 1250,
+    "REP": 300,
+    "Image_URL": "https://drive.google.com/uc?id=1ExjQQJnfzBUNTZZke41AL4fecifwFqsg",
+    "Catégorie": "Autre"
+  },
+  {
+    "N": 6,
+    "Désignation": "Chapeau",
+    "NE": 250,
+    "NS": 400,
+    "REP": null,
+    "Image_URL": "https://drive.google.com/uc?id=1vmwWTYWFYlLYyxsMGbfG4B6orm0jjyVq",
+    "Catégorie": "Autre"
+  },
+  {
+    "N": 7,
+    "Désignation": "Chaussette",
+    "NE": 250,
+    "NS": 400,
+    "REP": 100,
+    "Image_URL": "https://drive.google.com/uc?id=1nLBuSjV5mCjnf5JT0qnKh0o6H-ry1BxS",
+    "Catégorie": "Autre"
+  },
+  {
+    "N": 8,
+    "Désignation": "Chemise Bazin",
+    "NE": 600,
+    "NS": 1000,
+    "REP": 300,
+    "Image_URL": "https://drive.google.com/uc?id=1nLBuSjV5mCjnf5JT0qnKh0o6H-ry1BxS",
+    "Catégorie": "Haut"
+  },
+  {
+    "N": 9,
+    "Désignation": "Chemise Doublée",
+    "NE": 600,
+    "NS": 1000,
+    "REP": 300,
+    "Image_URL": "https://drive.google.com/uc?id=1nLBuSjV5mCjnf5JT0qnKh0o6H-ry1BxS",
+    "Catégorie": "Haut"
+  },
+  {
+    "N": 10,
+    "Désignation": "Chemise Faso Danfani",
+    "NE": 600,
+    "NS": 1000,
+    "REP": 300,
+    "Image_URL": "https://drive.google.com/uc?id=1nLBuSjV5mCjnf5JT0qnKh0o6H-ry1BxS",
+    "Catégorie": "Haut"
+  },
+  {
+    "N": 11,
+    "Désignation": "Chemise Jean",
+    "NE": 600,
+    "NS": 1000,
+    "REP": 300,
+    "Image_URL": "https://drive.google.com/uc?id=1nLBuSjV5mCjnf5JT0qnKh0o6H-ry1BxS",
+    "Catégorie": "Haut"
+  },
+  {
+    "N": 12,
+    "Désignation": "Chemise Pagne/Tissu",
+    "NE": 500,
+    "NS": 1000,
+    "REP": 300,
+    "Image_URL": "https://drive.google.com/uc?id=1nLBuSjV5mCjnf5JT0qnKh0o6H-ry1BxS",
+    "Catégorie": "Haut"
+  },
+  {
+    "N": 13,
+    "Désignation": "Costume 02 P.",
+    "NE": 1400,
+    "NS": 2500,
+    "REP": 700,
+    "Image_URL": "https://drive.google.com/uc?id=1nLBuSjV5mCjnf5JT0qnKh0o6H-ry1BxS",
+    "Catégorie": "Costume/Veste"
+  },
+  {
+    "N": 14,
+    "Désignation": "Costume 03 P.",
+    "NE": 2000,
+    "NS": 3500,
+    "REP": 900,
+    "Image_URL": "https://drive.google.com/uc?id=1nLBuSjV5mCjnf5JT0qnKh0o6H-ry1BxS",
+    "Catégorie": "Costume/Veste"
+  },
+  {
+    "N": 15,
+    "Désignation": "Couverture Grand F",
+    "NE": 3500,
+    "NS": 6000,
+    "REP": 750,
+    "Image_URL": "https://drive.google.com/uc?id=1nLBuSjV5mCjnf5JT0qnKh0o6H-ry1BxS",
+    "Catégorie": "Drap/Grand"
+  },
+  {
+    "N": 16,
+    "Désignation": "Couverture Petit F",
+    "NE": 1000,
+    "NS": 1500,
+    "REP": 500,
+    "Image_URL": "https://drive.google.com/uc?id=1nLBuSjV5mCjnf5JT0qnKh0o6H-ry1BxS",
+    "Catégorie": "Drap/Grand"
+  },
+  {
+    "N": 17,
+    "Désignation": "Cravate",
+    "NE": 200,
+    "NS": 350,
+    "REP": 100,
+    "Image_URL": "https://drive.google.com/uc?id=1nLBuSjV5mCjnf5JT0qnKh0o6H-ry1BxS",
+    "Catégorie": "Autre"
+  },
+  {
+    "N": 18,
+    "Désignation": "Débardeur",
+    "NE": 300,
+    "NS": 400,
+    "REP": 200,
+    "Image_URL": "https://drive.google.com/uc?id=1nLBuSjV5mCjnf5JT0qnKh0o6H-ry1BxS",
+    "Catégorie": "Autre"
+  },
+  {
+    "N": 19,
+    "Désignation": "Drap Grand F",
+    "NE": 4000,
+    "NS": 7000,
+    "REP": 1000,
+    "Image_URL": "https://drive.google.com/uc?id=1nLBuSjV5mCjnf5JT0qnKh0o6H-ry1BxS",
+    "Catégorie": "Drap/Grand"
+  },
+  {
+    "N": 20,
+    "Désignation": "Drap Petit F",
+    "NE": 1500,
+    "NS": 2500,
+    "REP": 750,
+    "Image_URL": "https://drive.google.com/uc?id=1nLBuSjV5mCjnf5JT0qnKh0o6H-ry1BxS",
+    "Catégorie": "Drap/Grand"
+  },
+  {
+    "N": 21,
+    "Désignation": "Ens. Enfants",
+    "NE": 700,
+    "NS": 1250,
+    "REP": 300,
+    "Image_URL": "https://drive.google.com/uc?id=1nLBuSjV5mCjnf5JT0qnKh0o6H-ry1BxS",
+    "Catégorie": "Ensemble/Robe"
+  },
+  {
+    "N": 22,
+    "Désignation": "Ens. Femme/Homme Bazin 02 P.",
+    "NE": 1500,
+    "NS": 2500,
+    "REP": 400,
+    "Image_URL": "https://drive.google.com/uc?id=1nLBuSjV5mCjnf5JT0qnKh0o6H-ry1BxS",
+    "Catégorie": "Ensemble/Robe"
+  },
+  {
+    "N": 23,
+    "Désignation": "Ens. Femme/Homme Bazin 03 P.",
+    "NE": 2000,
+    "NS": 3500,
+    "REP": 600,
+    "Image_URL": "https://drive.google.com/uc?id=1nLBuSjV5mCjnf5JT0qnKh0o6H-ry1BxS",
+    "Catégorie": "Ensemble/Robe"
+  },
+  {
+    "N": 24,
+    "Désignation": "Ens. Femme/Homme Faso Danfani 02 P.",
+    "NE": 1400,
+    "NS": 2500,
+    "REP": 400,
+    "Image_URL": "https://drive.google.com/uc?id=1nLBuSjV5mCjnf5JT0qnKh0o6H-ry1BxS",
+    "Catégorie": "Ensemble/Robe"
+  },
+  {
+    "N": 25,
+    "Désignation": "Ens. Femme/Homme Pagne/Tissu 02 P.",
+    "NE": 1000,
+    "NS": 1750,
+    "REP": 400,
+    "Image_URL": "https://drive.google.com/uc?id=1nLBuSjV5mCjnf5JT0qnKh0o6H-ry1BxS",
+    "Catégorie": "Ensemble/Robe"
+  },
+  {
+    "N": 26,
+    "Désignation": "Ens. Femme/Homme Pagne/Tissu 03 P.",
+    "NE": 1500,
+    "NS": 2500,
+    "REP": 600,
+    "Image_URL": "https://drive.google.com/uc?id=1nLBuSjV5mCjnf5JT0qnKh0o6H-ry1BxS",
+    "Catégorie": "Ensemble/Robe"
+  },
+  {
+    "N": 27,
+    "Désignation": "Ens. Femme Tailleur",
+    "NE": 1000,
+    "NS": 1750,
+    "REP": 500,
+    "Image_URL": "https://drive.google.com/uc?id=1nLBuSjV5mCjnf5JT0qnKh0o6H-ry1BxS",
+    "Catégorie": "Ensemble/Robe"
+  },
+  {
+    "N": 28,
+    "Désignation": "Haut vêtement",
+    "NE": 500,
+    "NS": 1000,
+    "REP": 300,
+    "Image_URL": "https://drive.google.com/uc?id=1nLBuSjV5mCjnf5JT0qnKh0o6H-ry1BxS",
+    "Catégorie": "Haut"
+  },
+  {
+    "N": 29,
+    "Désignation": "Kimono",
+    "NE": 1000,
+    "NS": 2000,
+    "REP": 500,
+    "Image_URL": "https://drive.google.com/uc?id=1nLBuSjV5mCjnf5JT0qnKh0o6H-ry1BxS",
+    "Catégorie": "Autre"
+  },
+  {
+    "N": 30,
+    "Désignation": "Manteau Grand F",
+    "NE": 1000,
+    "NS": 2000,
+    "REP": 500,
+    "Image_URL": "https://drive.google.com/uc?id=1nLBuSjV5mCjnf5JT0qnKh0o6H-ry1BxS",
+    "Catégorie": "Autre"
+  },
+  {
+    "N": 31,
+    "Désignation": "Manteau Petit F",
+    "NE": 500,
+    "NS": 1000,
+    "REP": 400,
+    "Image_URL": "https://drive.google.com/uc?id=1nLBuSjV5mCjnf5JT0qnKh0o6H-ry1BxS",
+    "Catégorie": "Autre"
+  },
+  {
+    "N": 32,
+    "Désignation": "Moquette/Tapis Grand F",
+    "NE": 17500,
+    "NS": null,
+    "REP": null,
+    "Image_URL": "https://drive.google.com/uc?id=1nLBuSjV5mCjnf5JT0qnKh0o6H-ry1BxS",
+    "Catégorie": "Drap/Grand"
+  },
+  {
+    "N": 33,
+    "Désignation": "Moquette/Tapis Petit F",
+    "NE": 7500,
+    "NS": null,
+    "REP": null,
+    "Image_URL": "https://drive.google.com/uc?id=1nLBuSjV5mCjnf5JT0qnKh0o6H-ry1BxS",
+    "Catégorie": "Drap/Grand"
+  },
+  {
+    "N": 34,
+    "Désignation": "Pagne Bazin",
+    "NE": 500,
+    "NS": 1000,
+    "REP": 250,
+    "Image_URL": "https://drive.google.com/uc?id=1nLBuSjV5mCjnf5JT0qnKh0o6H-ry1BxS",
+    "Catégorie": "Autre"
+  },
+  {
+    "N": 35,
+    "Désignation": "Pagne Faso Danfani",
+    "NE": 500,
+    "NS": 1000,
+    "REP": 250,
+    "Image_URL": "https://drive.google.com/uc?id=1nLBuSjV5mCjnf5JT0qnKh0o6H-ry1BxS",
+    "Catégorie": "Autre"
+  },
+  {
+    "N": 36,
+    "Désignation": "Pagne ordinaire",
+    "NE": 400,
+    "NS": 800,
+    "REP": 200,
+    "Image_URL": "https://drive.google.com/uc?id=1nLBuSjV5mCjnf5JT0qnKh0o6H-ry1BxS",
+    "Catégorie": "Autre"
+  },
+  {
+    "N": 37,
+    "Désignation": "Pantalon Bazin",
+    "NE": 400,
+    "NS": 800,
+    "REP": 300,
+    "Image_URL": "https://drive.google.com/uc?id=1nLBuSjV5mCjnf5JT0qnKh0o6H-ry1BxS",
+    "Catégorie": "Bas"
+  },
+  {
+    "N": 38,
+    "Désignation": "Pantalon Faso Danfani",
+    "NE": 500,
+    "NS": 1000,
+    "REP": 300,
+    "Image_URL": "https://drive.google.com/uc?id=1nLBuSjV5mCjnf5JT0qnKh0o6H-ry1BxS",
+    "Catégorie": "Bas"
+  },
+  {
+    "N": 39,
+    "Désignation": "Pantalon Jean",
+    "NE": 500,
+    "NS": 1000,
+    "REP": 300,
+    "Image_URL": "https://drive.google.com/uc?id=1nLBuSjV5mCjnf5JT0qnKh0o6H-ry1BxS",
+    "Catégorie": "Bas"
+  },
+  {
+    "N": 40,
+    "Désignation": "Pantalon Pagne/Tissu",
+    "NE": 400,
+    "NS": 800,
+    "REP": 200,
+    "Image_URL": "https://drive.google.com/uc?id=1nLBuSjV5mCjnf5JT0qnKh0o6H-ry1BxS",
+    "Catégorie": "Bas"
+  },
+  {
+    "N": 41,
+    "Désignation": "Rideau",
+    "NE": 1000,
+    "NS": null,
+    "REP": 300,
+    "Image_URL": "https://drive.google.com/uc?id=1nLBuSjV5mCjnf5JT0qnKh0o6H-ry1BxS",
+    "Catégorie": "Drap/Grand"
+  },
+  {
+    "N": 42,
+    "Désignation": "Robe de baptême",
+    "NE": 2000,
+    "NS": 3500,
+    "REP": 750,
+    "Image_URL": "https://drive.google.com/uc?id=1nLBuSjV5mCjnf5JT0qnKh0o6H-ry1BxS",
+    "Catégorie": "Ensemble/Robe"
+  },
+  {
+    "N": 43,
+    "Désignation": "Robe de Mariage",
+    "NE": 5000,
+    "NS": 7500,
+    "REP": 1000,
+    "Image_URL": "https://drive.google.com/uc?id=1nLBuSjV5mCjnf5JT0qnKh0o6H-ry1BxS",
+    "Catégorie": "Ensemble/Robe"
+  },
+  {
+    "N": 44,
+    "Désignation": "Robe Enfants",
+    "NE": 400,
+    "NS": 800,
+    "REP": 300,
+    "Image_URL": "https://drive.google.com/uc?id=1nLBuSjV5mCjnf5JT0qnKh0o6H-ry1BxS",
+    "Catégorie": "Ensemble/Robe"
+  },
+  {
+    "N": 45,
+    "Désignation": "Serviette",
+    "NE": 900,
+    "NS": null,
+    "REP": 300,
+    "Image_URL": "https://drive.google.com/uc?id=1nLBuSjV5mCjnf5JT0qnKh0o6H-ry1BxS",
+    "Catégorie": "Autre"
+  },
+  {
+    "N": 46,
+    "Désignation": "Short Bazin",
+    "NE": 400,
+    "NS": 800,
+    "REP": 200,
+    "Image_URL": "https://drive.google.com/uc?id=1nLBuSjV5mCjnf5JT0qnKh0o6H-ry1BxS",
+    "Catégorie": "Bas"
+  },
+  {
+    "N": 47,
+    "Désignation": "Short Pagne/Tissu",
+    "NE": 400,
+    "NS": 800,
+    "REP": 200,
+    "Image_URL": "https://drive.google.com/uc?id=1nLBuSjV5mCjnf5JT0qnKh0o6H-ry1BxS",
+    "Catégorie": "Bas"
+  },
+  {
+    "N": 48,
+    "Désignation": "Tee-shirt/Tricot",
+    "NE": 400,
+    "NS": 800,
+    "REP": 200,
+    "Image_URL": "https://drive.google.com/uc?id=1nLBuSjV5mCjnf5JT0qnKh0o6H-ry1BxS",
+    "Catégorie": "Haut"
+  },
+  {
+    "N": 49,
+    "Désignation": "Tenue militaire",
+    "NE": 1250,
+    "NS": 2000,
+    "REP": 600,
+    "Image_URL": "https://drive.google.com/uc?id=1nLBuSjV5mCjnf5JT0qnKh0o6H-ry1BxS",
+    "Catégorie": "Autre"
+  },
+  {
+    "N": 50,
+    "Désignation": "Veste simple",
+    "NE": 750,
+    "NS": 1500,
+    "REP": 350,
+    "Image_URL": "https://drive.google.com/uc?id=1nLBuSjV5mCjnf5JT0qnKh0o6H-ry1BxS",
+    "Catégorie": "Costume/Veste"
+  }
+]
