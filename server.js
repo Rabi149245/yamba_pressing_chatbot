@@ -2,10 +2,10 @@ import 'dotenv/config';
 import express from 'express';
 import bodyParser from 'body-parser';
 import cron from 'node-cron';
-import { handleIncomingMessage, sendText } from './whatsappService.js';
-import { sendToMakeWebhook } from './makeService.js';
-import { readCatalog } from './orderService.js';
-import { checkAndSendReminders } from './reminderService.js';
+import { handleIncomingMessage, sendText } from './services/whatsappService.js';
+import { sendToMakeWebhook } from './services/makeService.js';
+import { readCatalog } from './services/orderService.js';
+import { checkAndSendReminders } from './services/reminderService.js';
 
 // ---------------------------
 // Vérification des variables critiques
