@@ -1,3 +1,4 @@
+// Charger les variables d'environnement depuis le fichier .env (ESM)
 import 'dotenv/config';
 import express from 'express';
 import bodyParser from 'body-parser';
