@@ -1,8 +1,7 @@
 import axios from 'axios';
-import { computePriceFromCatalogue, readCatalog } from './orderService.js';
+import { computePriceFromCatalogue, readCatalog, addOrder } from './orderService.js';
 import { sendToMakeWebhook } from './makeService.js';
 import * as userService from './userService.js';
-import * as orderService from './orderService.js';
 import * as pickupService from './pickupService.js';
 import * as promoService from './promoService.js';
 import * as humanService from './humanService.js';
@@ -12,9 +11,6 @@ import * as agentsService from './agentsService.js';
 
 const TOKEN = process.env.WHATSAPP_TOKEN;
 const PHONE_ID = process.env.WHATSAPP_PHONE_ID;
-const ADMIN_PHONE = process.env.ADMIN_PHONE.replace(/[\s\-+]/g, '').startsWith('226')
-    ? process.env.ADMIN_PHONE.replace(/[\s\-+]/g, '')
-    : '226' + process.env.ADMIN_PHONE.replace(/[\s\-+]/g, '');
 const API_URL = PHONE_ID ? `https://graph.facebook.com/v17.0/${PHONE_ID}/messages` : null;
 
 // Message d'accueil principal
@@ -55,12 +51,7 @@ async function sendText(to, text) {
 async function sendImage(to, imageUrl, caption) {
     if (!TOKEN || !PHONE_ID) return false;
     try {
-        const payload = {
-            messaging_product: 'whatsapp',
-            to,
-            type: 'image',
-            image: { link: imageUrl, caption }
-        };
+        const payload = { messaging_product: 'whatsapp', to, type: 'image', image: { link: imageUrl, caption } };
         const res = await axios.post(API_URL, payload, {
             headers: { Authorization: `Bearer ${TOKEN}`, 'Content-Type': 'application/json' },
             timeout: 15000
@@ -74,13 +65,25 @@ async function sendImage(to, imageUrl, caption) {
 }
 
 // ---------------------------
+// Vérifie si un message d'accueil doit être envoyé (24h)
+// ---------------------------
+async function sendWelcomeIfNeeded(to) {
+    const now = new Date();
+    const lastMessageAt = await userService.getUserLastMessage(to);
+    if (!lastMessageAt || (now - new Date(lastMessageAt)) > 24 * 60 * 60 * 1000) {
+        await sendText(to, WELCOME_MESSAGE);
+        await userService.updateUserLastMessage(to, now);
+    }
+}
+
+// ---------------------------
 // Gestion des messages entrants
 // ---------------------------
 async function handleIncomingMessage(message) {
     const from = message.from;
     if (!from) return;
 
-    // Envoi vers Make
+    // Forward vers Make
     if (process.env.MAKE_WEBHOOK_URL) {
         try { await sendToMakeWebhook({ incoming: message }, 'incoming_message'); } catch (e) { }
     }
@@ -88,80 +91,64 @@ async function handleIncomingMessage(message) {
     const now = new Date();
     const lastMessageAt = await userService.getUserLastMessage(from);
 
-    // ---------------------------
-    // Message d'accueil automatique toutes les 24h
-    // ---------------------------
+    // Accueil automatique
     if (!lastMessageAt || (now - new Date(lastMessageAt)) > 24 * 60 * 60 * 1000) {
         await sendText(from, WELCOME_MESSAGE);
         await userService.updateUserLastMessage(from, now);
         return;
     }
 
-    // ---------------------------
-    // Gestion menu interactif et sous-menus
-    // ---------------------------
+    // Gestion menu principal et sous-menus
     if (message.text && message.text.body) {
         const body = message.text.body.trim();
 
-        // Retour au menu principal
         if (body === '*') {
             await sendText(from, WELCOME_MESSAGE);
             await userService.updateUserLastMessage(from, now);
             return;
         }
 
-        // Gestion des réponses principales
         switch (body) {
-            case '1': // Lavage à sec
-                await sendImage(from, 'https://exemple.com/lavage_sec.jpg',
-                    'Voici les prix pour le lavage à sec 👇\n🧺 Serviette : 900 F (NE) | Repassage : 300 F\n👔 Chemise : 1000 F | Costume : 3000 F\n\nSouhaitez-vous :\n1️⃣ Dépôt au pressing\n2️⃣ Enlèvement à domicile 🚚');
+            case '1':
+                await sendImage(from, 'https://exemple.com/lavage_sec.jpg', 'Prix Lavage à sec...');
                 await userService.updateUserState(from, { service: 'lavage_sec' });
                 break;
-            case '2': // Lavage à eau
-                await sendImage(from, 'https://exemple.com/lavage_eau.jpg',
-                    'Lavage à eau 💧\n🧺 Serviette : 700 F\n👕 T-shirt : 500 F\nDrap : 1000 F\n\nSouhaitez-vous un amidonnage ?\n1️⃣ Oui\n2️⃣ Non');
+            case '2':
+                await sendImage(from, 'https://exemple.com/lavage_eau.jpg', 'Prix Lavage à eau...');
                 await userService.updateUserState(from, { service: 'lavage_eau' });
                 break;
-            case '3': // Repassage
-                await sendImage(from, 'https://exemple.com/repassage.jpg',
-                    'Voici nos tarifs pour le repassage 👕\nChemise : 300 F\nPantalon : 400 F\nCostume : 800 F');
+            case '3':
+                await sendImage(from, 'https://exemple.com/repassage.jpg', 'Prix Repassage...');
                 await userService.updateUserState(from, { service: 'repassage' });
                 break;
-            case '4': // Autres services
-                await sendImage(from, 'https://exemple.com/autres_services.jpg',
-                    'Services supplémentaires 🌟\nAmidonnage : 200 F par vêtement\nEnlèvement à domicile 🚚\nLivraison après nettoyage 📦');
+            case '4':
+                await sendImage(from, 'https://exemple.com/autres_services.jpg', 'Autres services...');
                 await userService.updateUserState(from, { service: 'autres_services' });
                 break;
-            case '5': // Parler à un humain
-                await sendText(from, 'Merci ! 😊\nUn membre de notre équipe va vous répondre dans quelques instants.');
+            case '5':
+                await sendText(from, 'Merci ! Un agent humain va vous répondre.');
                 const agent = await agentsService.assignAgent();
                 if (agent) await sendText(agent.Phone, `Nouvelle demande d'assistance de ${from}`);
                 await humanService.createHumanRequest(from);
                 break;
-
-            // ---------------------------
-            // Sous-menus (dépôt/enlèvement, amidonnage)
-            // ---------------------------
-            case '1_dep': // dépôt au pressing
-            case '2_pickup': // enlèvement à domicile
-            case '1_oui': // amidonnage oui
-            case '2_non': // amidonnage non
+            case '1_dep':
+            case '2_pickup':
+            case '1_oui':
+            case '2_non':
                 await handleSubMenuResponses(from, body);
                 break;
-
             default:
-                await sendText(from, "Je n'ai pas compris votre choix. Tapez un chiffre entre 1 et 5 ou '*' pour revenir au menu.");
+                await sendText(from, "Je n'ai pas compris votre choix. Tapez 1-5 ou '*' pour revenir au menu.");
         }
 
         await userService.updateUserLastMessage(from, now);
-        return;
+    } else {
+        await sendText(from, 'Type de message non géré. Tapez "*" pour revenir au menu.');
     }
-
-    await sendText(from, 'Type de message non géré. Tapez "*" pour revenir au menu principal.');
 }
 
 // ---------------------------
-// Gestion sous-menus et création de commandes
+// Gestion sous-menus et création de commandes avec computePriceFromCatalogue
 // ---------------------------
 async function handleSubMenuResponses(from, choice) {
     const state = await userService.getUserState(from);
@@ -170,13 +157,8 @@ async function handleSubMenuResponses(from, choice) {
         return;
     }
 
-    let order = {
-        ClientPhone: from,
-        ItemsJSON: [],
-        Total: 0,
-        Status: 'Pending',
-        CreatedAt: new Date().toISOString()
-    };
+    const catalogue = await readCatalog();
+    const order = { ClientPhone: from, ItemsJSON: [], Total: 0, Status: 'Pending', CreatedAt: new Date().toISOString() };
 
     switch (choice) {
         case '1_dep':
@@ -193,9 +175,23 @@ async function handleSubMenuResponses(from, choice) {
             break;
     }
 
-    // Calcul du prix
-    order.Total = computePriceFromCatalogue(order.ItemsJSON);
-    await orderService.addOrder(order);
+    // Calcul du total en utilisant computePriceFromCatalogue pour chaque item
+    let total = 0;
+    for (let item of order.ItemsJSON) {
+        try {
+            const { total: itemTotal } = await computePriceFromCatalogue(item.type, item.option ? 'NE' : 'REP', 1);
+            item.Total = itemTotal;
+            total += itemTotal;
+        } catch (err) {
+            console.warn('Erreur calcul prix:', err.message);
+        }
+    }
+    order.Total = total;
+
+    // Sauvegarde de la commande
+    await addOrder(order);
+
+    // Envoi feedback utilisateur
     await sendText(from, `Commande enregistrée ✅\nTotal estimé : ${order.Total} F`);
 
     // Mise à jour points fidélité
@@ -212,4 +208,4 @@ async function handleSubMenuResponses(from, choice) {
 // ---------------------------
 // Export
 // ---------------------------
-export { sendText, sendImage, handleIncomingMessage };
+export { sendText, sendImage, handleIncomingMessage, sendWelcomeIfNeeded };
