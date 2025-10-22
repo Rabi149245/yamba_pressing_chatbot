@@ -1,14 +1,12 @@
-// Charger les variables d'environnement depuis le fichier .env (ESM)
 import 'dotenv/config';
 import express from 'express';
 import bodyParser from 'body-parser';
 import cron from 'node-cron';
-
-// Services
-import { handleIncomingMessage, sendText } from './services/whatsappService.js';
-import { sendToMakeWebhook } from './services/makeService.js';
-import { readCatalog } from './services/orderService.js';
-import { checkAndSendReminders } from './services/reminderService.js';
+import { handleIncomingMessage, sendText, sendWelcomeIfNeeded } from './whatsappService.js';
+import { sendToMakeWebhook } from './makeService.js';
+import { readCatalog } from './orderService.js';
+import { checkAndSendReminders } from './reminderService.js';
+import { logNotification } from './notificationsService.js';
 
 // ---------------------------
 // Vérification des variables critiques
@@ -22,6 +20,13 @@ const PORT = process.env.PORT || 5000;
 const ENABLE_REMINDERS = process.env.ENABLE_REMINDERS === "true";
 
 // ---------------------------
+// Vérification console
+// ---------------------------
+console.log("Serveur démarré sur le port", PORT);
+console.log("Webhook Make :", process.env.MAKE_WEBHOOK_URL);
+console.log("Rappels activés :", ENABLE_REMINDERS);
+
+// ---------------------------
 // Initialisation Express
 // ---------------------------
 const app = express();
@@ -32,6 +37,7 @@ app.use(bodyParser.json());
 // ---------------------------
 app.get('/', (req, res) => res.send('Yamba Pressing Chatbot - Ready'));
 
+// Catalogue
 app.get('/catalogue', async (req, res) => {
     try {
         const data = await readCatalog();
@@ -41,6 +47,7 @@ app.get('/catalogue', async (req, res) => {
     }
 });
 
+// Webhook verification
 app.get('/webhook', (req, res) => {
     const mode = req.query['hub.mode'];
     const token = req.query['hub.verify_token'];
@@ -56,6 +63,7 @@ app.get('/webhook', (req, res) => {
     res.sendStatus(200);
 });
 
+// Webhook réception messages
 app.post('/webhook', async (req, res) => {
     try {
         const body = req.body;
@@ -68,8 +76,13 @@ app.post('/webhook', async (req, res) => {
         const entry = body.entry?.[0];
         const change = entry?.changes?.[0];
         const message = change?.value?.messages?.[0] || entry?.messaging?.[0] || body.message;
+        const from = message?.from || message?.sender?.id;
 
-        if (message) {
+        if (message && from) {
+            // Vérifie si message d'accueil automatique nécessaire (24h)
+            await sendWelcomeIfNeeded(from);
+
+            // Gestion du message et menus
             await handleIncomingMessage(message);
         }
 
@@ -80,7 +93,11 @@ app.post('/webhook', async (req, res) => {
     }
 });
 
+// ---------------------------
 // Routes supplémentaires
+// ---------------------------
+
+// Pickup
 app.post('/pickup', async (req, res) => {
     const { phone, lat, lon, address } = req.body;
     if (!process.env.MAKE_WEBHOOK_URL) return res.status(500).json({ error: 'Make webhook not configured' });
@@ -92,6 +109,7 @@ app.post('/pickup', async (req, res) => {
     }
 });
 
+// Commande
 app.post('/commande', async (req, res) => {
     const body = req.body;
     try {
@@ -102,6 +120,7 @@ app.post('/commande', async (req, res) => {
     }
 });
 
+// Promotions
 app.get('/promotions', async (req, res) => {
     try {
         await sendToMakeWebhook({ event: 'list_promos' }, 'Promotions');
@@ -111,6 +130,7 @@ app.get('/promotions', async (req, res) => {
     }
 });
 
+// Mise à jour points fidélité
 app.post('/fidelite', async (req, res) => {
     try {
         await sendToMakeWebhook({ event: 'update_points', payload: req.body }, 'PointsTransactions');
@@ -120,6 +140,7 @@ app.post('/fidelite', async (req, res) => {
     }
 });
 
+// Demande d'assistance humaine
 app.post('/human', async (req, res) => {
     try {
         await sendToMakeWebhook({ event: 'create_human_request', payload: req.body }, 'HumanRequest');
@@ -129,6 +150,7 @@ app.post('/human', async (req, res) => {
     }
 });
 
+// Envoi message WhatsApp direct
 app.post('/send-whatsapp', async (req, res) => {
     const { to, message } = req.body;
     if (!to || !message) return res.status(400).json({ error: 'Missing "to" or "message"' });
@@ -142,7 +164,9 @@ app.post('/send-whatsapp', async (req, res) => {
     }
 });
 
+// ---------------------------
 // Cron pour rappels
+// ---------------------------
 if (ENABLE_REMINDERS) {
     cron.schedule('0 9 * * *', async () => {
         try {
@@ -155,5 +179,7 @@ if (ENABLE_REMINDERS) {
     console.log('Reminders enabled (cron scheduled).');
 }
 
+// ---------------------------
 // Lancement serveur
+// ---------------------------
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
