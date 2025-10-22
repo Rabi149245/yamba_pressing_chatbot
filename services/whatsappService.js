@@ -1,13 +1,13 @@
 import axios from 'axios';
 import { computePriceFromCatalogue, readCatalog, addOrder } from './orderService.js';
-import { sendToMakeWebhook } from './makeService.js';
-import * as userService from './userService.js';
-import * as pickupService from './pickupService.js';
-import * as promoService from './promoService.js';
+import { sendToMakeWebhook } from './services/makeService.js';
+import * as userService from './services/userService.js';
+import * as pickupService from './services/pickupService.js';
+import * as promoService from './services/promoService.js';
 import * as humanService from './humanService.js';
-import * as pointsService from './pointsService.js';
-import * as notificationsService from './notificationsService.js';
-import * as agentsService from './agentsService.js';
+import * as pointsService from './services/pointsService.js';
+import * as notificationsService from './services/notificationsService.js';
+import * as agentsService from './services/agentsService.js';
 
 const TOKEN = process.env.WHATSAPP_TOKEN;
 const PHONE_ID = process.env.WHATSAPP_PHONE_ID;
