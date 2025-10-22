@@ -2,11 +2,10 @@ import 'dotenv/config';
 import express from 'express';
 import bodyParser from 'body-parser';
 import cron from 'node-cron';
-import { handleIncomingMessage, sendText, sendWelcomeIfNeeded } from './whatsappService.js';
+import { handleIncomingMessage, sendText } from './whatsappService.js';
 import { sendToMakeWebhook } from './makeService.js';
 import { readCatalog } from './orderService.js';
 import { checkAndSendReminders } from './reminderService.js';
-import { logNotification } from './notificationsService.js';
 
 // ---------------------------
 // Vérification des variables critiques
@@ -70,19 +69,18 @@ app.post('/webhook', async (req, res) => {
 
         // Forward vers Make
         if (process.env.MAKE_WEBHOOK_URL) {
-            try { await sendToMakeWebhook({ event: 'incoming_message', payload: body }, 'incoming_message'); } catch (e) { console.warn('Make forward failed', e.message); }
+            try { 
+                await sendToMakeWebhook({ event: 'incoming_message', payload: body }, 'incoming_message'); 
+            } catch (e) { 
+                console.warn('Make forward failed', e.message); 
+            }
         }
 
         const entry = body.entry?.[0];
         const change = entry?.changes?.[0];
         const message = change?.value?.messages?.[0] || entry?.messaging?.[0] || body.message;
-        const from = message?.from || message?.sender?.id;
 
-        if (message && from) {
-            // Vérifie si message d'accueil automatique nécessaire (24h)
-            await sendWelcomeIfNeeded(from);
-
-            // Gestion du message et menus
+        if (message) {
             await handleIncomingMessage(message);
         }
 
@@ -96,8 +94,6 @@ app.post('/webhook', async (req, res) => {
 // ---------------------------
 // Routes supplémentaires
 // ---------------------------
-
-// Pickup
 app.post('/pickup', async (req, res) => {
     const { phone, lat, lon, address } = req.body;
     if (!process.env.MAKE_WEBHOOK_URL) return res.status(500).json({ error: 'Make webhook not configured' });
@@ -109,7 +105,6 @@ app.post('/pickup', async (req, res) => {
     }
 });
 
-// Commande
 app.post('/commande', async (req, res) => {
     const body = req.body;
     try {
@@ -120,7 +115,6 @@ app.post('/commande', async (req, res) => {
     }
 });
 
-// Promotions
 app.get('/promotions', async (req, res) => {
     try {
         await sendToMakeWebhook({ event: 'list_promos' }, 'Promotions');
@@ -130,7 +124,6 @@ app.get('/promotions', async (req, res) => {
     }
 });
 
-// Mise à jour points fidélité
 app.post('/fidelite', async (req, res) => {
     try {
         await sendToMakeWebhook({ event: 'update_points', payload: req.body }, 'PointsTransactions');
@@ -140,7 +133,6 @@ app.post('/fidelite', async (req, res) => {
     }
 });
 
-// Demande d'assistance humaine
 app.post('/human', async (req, res) => {
     try {
         await sendToMakeWebhook({ event: 'create_human_request', payload: req.body }, 'HumanRequest');
@@ -150,7 +142,6 @@ app.post('/human', async (req, res) => {
     }
 });
 
-// Envoi message WhatsApp direct
 app.post('/send-whatsapp', async (req, res) => {
     const { to, message } = req.body;
     if (!to || !message) return res.status(400).json({ error: 'Missing "to" or "message"' });
