@@ -62,12 +62,12 @@ export async function sendWhatsAppImage(to, imageUrl, caption) {
 }
 
 // ---------------------------
-// Envoi message d'accueil si nécessaire (24h) ou forcé
+// Envoi message d'accueil si nécessaire (24h)
 // ---------------------------
-export async function sendWelcomeIfNeeded(to, force = false) {
+export async function sendWelcomeIfNeeded(to) {
   const now = new Date();
   const lastMessageAt = await userService.getUserLastMessage(to);
-  if (force || !lastMessageAt || (now - new Date(lastMessageAt)) > 24 * 60 * 60 * 1000) {
+  if (!lastMessageAt || (now - new Date(lastMessageAt)) > 24 * 60 * 60 * 1000) {
     await sendWhatsAppMessage(to, WELCOME_MESSAGE);
     await userService.updateUserLastMessage(to, now);
   }
@@ -141,22 +141,25 @@ export async function handleIncomingMessage(message) {
   if (!from) return;
   const body = (message.text?.body || '').trim().toLowerCase();
 
-  // 🔄 Forward vers Make (si configuré)
+  // 🔄 Forward vers Make
   if (process.env.MAKE_WEBHOOK_URL) {
     try { await sendToMakeWebhook({ incoming: message }, 'incoming_message'); } catch (e) { }
   }
 
   const now = new Date();
+  const lastMessageAt = await userService.getUserLastMessage(from);
 
-  // ✅ Accueil automatique (toujours déclenché si message * ou force)
-  if (body === '*') {
-    await sendWelcomeIfNeeded(from, true);
+  // ✅ Accueil automatique
+  if (!lastMessageAt || (now - new Date(lastMessageAt)) > 24 * 60 * 60 * 1000) {
+    await sendWhatsAppMessage(from, WELCOME_MESSAGE);
+    await userService.updateUserLastMessage(from, now);
     return;
   }
 
-  const lastMessageAt = await userService.getUserLastMessage(from);
-  if (!lastMessageAt || (now - new Date(lastMessageAt)) > 24 * 60 * 60 * 1000) {
-    await sendWelcomeIfNeeded(from);
+  // 🔹 Retour au menu
+  if (body === '*') {
+    await sendWhatsAppMessage(from, WELCOME_MESSAGE);
+    await userService.updateUserLastMessage(from, now);
     return;
   }
 
