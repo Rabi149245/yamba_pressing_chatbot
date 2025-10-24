@@ -1,6 +1,6 @@
 // src/services/reminderService.js
 import { sendToMakeWebhook } from './makeService.js';
-import { sendText } from './whatsappService.js';
+import { sendWhatsAppMessage } from './whatsappService.js';
 import * as notificationsService from './notificationsService.js';
 
 /**
@@ -45,7 +45,8 @@ export async function checkAndSendReminders() {
       const msg = `Bonjour ${name}, votre vêtement est prêt 👕.\nVous pouvez passer le récupérer ou demander une livraison 🚚.\nMerci pour votre confiance ❤️.`;
 
       try {
-        await sendText(phone, msg);
+        // ✅ Remplacement de sendText par sendWhatsAppMessage
+        await sendWhatsAppMessage(phone, msg);
         await notificationsService.logNotification(phone, msg, orderId, 'Reminder');
 
         // 3️⃣ Informe Make que le rappel a été envoyé
