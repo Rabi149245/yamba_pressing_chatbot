@@ -3,7 +3,7 @@ import 'dotenv/config';
 import express from 'express';
 import bodyParser from 'body-parser';
 import cron from 'node-cron';
-import { handleIncomingMessage, sendText } from './services/whatsappService.js';
+import { handleIncomingMessage, sendWhatsAppMessage } from './services/whatsappService.js';
 import { sendToMakeWebhook, validateMakeSignature } from './services/makeService.js';
 import { readCatalog } from './services/orderService.js';
 import { checkAndSendReminders } from './services/reminderService.js';
@@ -173,9 +173,8 @@ app.post('/send-whatsapp', async (req, res) => {
   if (!to || !message) return res.status(400).json({ error: 'Missing "to" or "message"' });
 
   try {
-    const result = await sendText(to, message);
-    if (result) return res.json({ status: 'ok', message: 'Message envoyé ✅' });
-    else return res.status(500).json({ status: 'error', message: 'Échec de l’envoi' });
+    const result = await sendWhatsAppMessage(to, message);
+    return res.json({ status: 'ok', message: 'Message envoyé ✅' });
   } catch (err) {
     return res.status(500).json({ status: 'error', message: err.message });
   }
