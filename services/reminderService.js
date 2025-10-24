@@ -6,8 +6,8 @@ import * as notificationsService from './notificationsService.js';
 /**
  * Vérifie les commandes en attente via Make et envoie un rappel automatique.
  * 
- * Les commandes sont supposées provenir d’un scénario Make renvoyant un tableau
- * d’objets contenant au moins { ClientPhone, ClientName }.
+ * Les commandes doivent provenir d’un scénario Make renvoyant un tableau
+ * d’objets contenant au moins { ClientPhone, ClientName, OrderId }.
  */
 export async function checkAndSendReminders() {
   if (!process.env.MAKE_WEBHOOK_URL) {
@@ -17,20 +17,25 @@ export async function checkAndSendReminders() {
 
   try {
     // 1️⃣ Demande à Make la liste des commandes à rappeler
-    const pending = await sendToMakeWebhook(
-      { action: 'get_pending_orders' },
-      'get_pending_orders'
-    );
+    const pending = await sendToMakeWebhook({ action: 'get_pending_orders' }, 'get_pending_orders');
 
-    if (!Array.isArray(pending) || pending.length === 0) {
+    if (!pending || pending.ok === false) {
+      console.warn('⚠️ Réponse Make invalide :', pending);
+      return false;
+    }
+
+    const orders = Array.isArray(pending) ? pending : pending?.data || [];
+
+    if (!orders.length) {
       console.log('✅ Aucun rappel à envoyer.');
       return true;
     }
 
     // 2️⃣ Envoie un message de rappel personnalisé à chaque client
-    for (const order of pending) {
+    for (const order of orders) {
       const phone = order.ClientPhone;
       const name = order.ClientName || 'client(e)';
+      const orderId = order.OrderId || null;
 
       if (!phone) {
         console.warn('⚠️ Commande sans numéro de téléphone, ignorée.');
@@ -41,13 +46,16 @@ export async function checkAndSendReminders() {
 
       try {
         await sendText(phone, msg);
-        await notificationsService.logNotification(phone, msg, null, 'Reminder');
+        await notificationsService.logNotification(phone, msg, orderId, 'Reminder');
+
+        // 3️⃣ Informe Make que le rappel a été envoyé
+        await sendToMakeWebhook({ action: 'mark_reminded', orderId, phone }, 'get_pending_orders');
       } catch (e) {
         console.error(`❌ Échec d’envoi du rappel à ${phone}:`, e.message);
       }
     }
 
-    console.log(`✅ Rappels envoyés à ${pending.length} client(s).`);
+    console.log(`✅ Rappels envoyés à ${orders.length} client(s).`);
     return true;
 
   } catch (err) {
