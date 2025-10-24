@@ -67,7 +67,7 @@ export async function sendWhatsAppImage(to, imageUrl, caption) {
 export async function sendWelcomeIfNeeded(to) {
   const now = new Date();
   const lastMessageAt = await userService.getUserLastMessage(to);
-  if (!lastMessageAt || (now - new Date(lastMessageAt)) > 24 * 60 * 60 * 1000) {
+  //if (!lastMessageAt || (now - new Date(lastMessageAt)) > 24 * 60 * 60 * 1000) {
     await sendWhatsAppMessage(to, WELCOME_MESSAGE);
     await userService.updateUserLastMessage(to, now);
   }
