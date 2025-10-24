@@ -1,11 +1,10 @@
-// server.js (version modifiée pour vérification signature Make)
+// server.js
 import 'dotenv/config';
 import express from 'express';
 import bodyParser from 'body-parser';
 import cron from 'node-cron';
-import crypto from 'crypto';
 import { handleIncomingMessage, sendWhatsAppMessage } from './services/whatsappService.js';
-import { sendToMakeWebhook } from './services/makeService.js';
+import { sendToMakeWebhook, validateMakeSignature } from './services/makeService.js';
 import { readCatalog } from './services/orderService.js';
 import { checkAndSendReminders } from './services/reminderService.js';
 
@@ -14,11 +13,6 @@ import { checkAndSendReminders } from './services/reminderService.js';
 // ---------------------------
 if (!process.env.MAKE_WEBHOOK_URL) {
   console.error("Erreur : MAKE_WEBHOOK_URL n'est pas configurée !");
-  process.exit(1);
-}
-
-if (!process.env.WEBHOOK_SIGNATURE_SECRET) {
-  console.error("Erreur : WEBHOOK_SIGNATURE_SECRET n'est pas défini !");
   process.exit(1);
 }
 
@@ -46,21 +40,6 @@ app.use(
     },
   })
 );
-
-// ---------------------------
-// Fonction de vérification HMAC Make
-// ---------------------------
-function verifyMakeSignature(req) {
-  const signature = req.headers['x-make-signature'];
-  if (!signature) return false;
-
-  const expected = crypto
-    .createHmac('sha256', process.env.WEBHOOK_SIGNATURE_SECRET)
-    .update(req.rawBody)
-    .digest('hex');
-
-  return signature === expected;
-}
 
 // ---------------------------
 // Routes principales
@@ -97,12 +76,13 @@ app.get('/webhook', (req, res) => {
 });
 
 // ---------------------------
-// Webhook réception messages WhatsApp avec signature Make
+// Webhook réception messages WhatsApp
 // ---------------------------
 app.post('/webhook', async (req, res) => {
   try {
-    // ✅ Vérification de signature Make
-    if (!verifyMakeSignature(req)) {
+    // ✅ Vérification de signature Make si envoyée
+    const valid = validateMakeSignature(req.headers, req.rawBody);
+    if (!valid) {
       console.warn('Signature Make invalide — requête refusée');
       return res.status(401).send('Invalid Make signature');
     }
@@ -134,7 +114,7 @@ app.post('/webhook', async (req, res) => {
 });
 
 // ---------------------------
-// Les autres routes restent inchangées
+// Autres routes vers Make
 // ---------------------------
 app.post('/pickup', async (req, res) => {
   const { phone, lat, lon, address } = req.body;
