@@ -1,27 +1,66 @@
 // src/services/makeService.js
 import axios from 'axios';
 import crypto from 'crypto';
+import fs from 'fs';
+import path from 'path';
 
 const MAKE_WEBHOOK_URL = process.env.MAKE_WEBHOOK_URL;
 const MAKE_API_KEY = process.env.MAKE_API_KEY;
 const DEBUG_MAKE = process.env.DEBUG_MAKE === 'true';
 
+// Fichier pour persister la queue
+const QUEUE_FILE = path.resolve('./makeQueue.json');
+const PROCESS_INTERVAL = 3000; // toutes les 3 secondes
+const MAX_RETRIES = 5;
+
+// Queue persistante
+let queue = [];
+try {
+  if (fs.existsSync(QUEUE_FILE)) {
+    queue = JSON.parse(fs.readFileSync(QUEUE_FILE, 'utf-8'));
+  }
+} catch (err) {
+  console.warn('[Make] Impossible de charger la queue:', err.message);
+}
+
+function saveQueue() {
+  try {
+    fs.writeFileSync(QUEUE_FILE, JSON.stringify(queue, null, 2));
+  } catch (err) {
+    console.error('[Make] Échec sauvegarde queue:', err.message);
+  }
+}
+
+// ---------------------------
 // Vérification initiale (au démarrage)
+// ---------------------------
 if (!MAKE_WEBHOOK_URL) console.warn('⚠️ MAKE_WEBHOOK_URL manquant — les appels Make échoueront.');
 if (!MAKE_API_KEY) console.warn('⚠️ MAKE_API_KEY manquant — les appels Make seront refusés.');
 
-/**
- * 📨 Envoie un événement vers Make
- */
+// ---------------------------
+// 📨 Envoie un événement vers Make avec queue et retry automatique
+// ---------------------------
 export async function sendToMakeWebhook(payload, event = 'event') {
   if (!MAKE_WEBHOOK_URL || !MAKE_API_KEY) {
     console.error('❌ Impossible d’envoyer à Make : variables non configurées');
     return { ok: false, error: 'Missing env vars' };
   }
 
+  queue.push({ payload, event, retries: 0 });
+  saveQueue();
+}
+
+// ---------------------------
+// Traitement automatique de la queue
+// ---------------------------
+async function processQueue() {
+  if (queue.length === 0) return;
+
+  const item = queue[0];
+
   const body = {
-    event,
-    payload,
+    event: item.event,
+    payload: item.payload,
     ts: new Date().toISOString(),
     id: `mk_${Date.now()}_${Math.floor(Math.random() * 1000)}`
   };
@@ -37,21 +76,36 @@ export async function sendToMakeWebhook(payload, event = 'event') {
 
     if (res.status !== 200) {
       console.warn(`[MAKE] HTTP ${res.status} - ${res.statusText}`);
-      return { ok: false, error: `HTTP ${res.status}` };
+      return;
     }
 
     if (DEBUG_MAKE) console.log('[MAKE → OK]', JSON.stringify(res.data).slice(0, 500));
 
-    return { ok: true, data: res.data };
+    queue.shift();
+    saveQueue();
   } catch (err) {
-    console.error('[MAKE] Webhook error:', err.response?.data || err.message);
-    return { ok: false, error: err.response?.data || err.message };
+    item.retries++;
+    console.warn('[MAKE] Webhook error:', err.response?.data || err.message, `(retry ${item.retries})`);
+
+    if (item.retries >= MAX_RETRIES) {
+      console.error(`[MAKE] Échec définitif après ${MAX_RETRIES} retries pour ${item.event}`);
+      queue.shift();
+      saveQueue();
+    } else {
+      // Retry avec délai exponentiel
+      const delay = 1000 * Math.pow(2, item.retries);
+      setTimeout(() => processQueue(), delay);
+      return;
+    }
   }
 }
 
-/**
- * 🧱 Formate un payload standardisé
- */
+// Démarrer un intervalle régulier pour traiter la queue
+setInterval(() => processQueue(), PROCESS_INTERVAL);
+
+// ---------------------------
+// 🧱 Formate un payload standardisé
+// ---------------------------
 export function formatMakePayload(type, data = {}, meta = {}) {
   return {
     id: `mk_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
@@ -62,9 +116,9 @@ export function formatMakePayload(type, data = {}, meta = {}) {
   };
 }
 
-/**
- * 🔒 Vérifie la signature Make pour les webhooks entrants
- */
+// ---------------------------
+// 🔒 Vérifie la signature Make pour les webhooks entrants
+// ---------------------------
 export function validateMakeSignature(headers, rawBody, secret = process.env.MAKE_SIGNATURE_SECRET) {
   if (!secret) return true;
 
