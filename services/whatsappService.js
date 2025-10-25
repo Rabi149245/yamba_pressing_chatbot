@@ -10,7 +10,7 @@ import * as humanService from './humanService.js';
 
 const TOKEN = process.env.WHATSAPP_TOKEN;
 const PHONE_ID = process.env.WHATSAPP_PHONE_ID;
-const WHATSAPP_API_URL = https://graph.facebook.com/v19.0/${PHONE_ID}/messages;
+const WHATSAPP_API_URL = `https://graph.facebook.com/v19.0/${PHONE_ID}/messages`;
 
 // ---------------------------
 // Message d’accueil
