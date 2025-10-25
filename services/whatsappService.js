@@ -15,7 +15,7 @@ const WHATSAPP_API_URL = `https://graph.facebook.com/v19.0/${PHONE_ID}/messages`
 // ---------------------------
 // Message d’accueil
 // ---------------------------
-const WELCOME_MESSAGE = Bonjour 👋 et bienvenue chez Pressing Yamba 🧺 Je suis votre assistant virtuel. Voici nos services : 1️⃣ Lavage à sec 2️⃣ Lavage à eau 3️⃣ Repassage 4️⃣ Autres services 5️⃣ Parler à un agent humain 👩🏽‍💼 ➡ Répondez avec un chiffre (1 à 5) pour choisir un service. Tapez "*" à tout moment pour revenir à ce menu.;
+const WELCOME_MESSAGE = `Bonjour 👋 et bienvenue chez Pressing Yamba 🧺 Je suis votre assistant virtuel. Voici nos services : 1️⃣ Lavage à sec 2️⃣ Lavage à eau 3️⃣ Repassage 4️⃣ Autres services 5️⃣ Parler à un agent humain 👩🏽‍💼 ➡ Répondez avec un chiffre (1 à 5) pour choisir un service. Tapez "*" à tout moment pour revenir à ce menu.`;
 
 // ---------------------------
 // Envoi de message texte
