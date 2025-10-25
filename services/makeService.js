@@ -1,25 +1,29 @@
-// makeService.js
+// src/services/makeService.js
 import axios from 'axios';
+import crypto from 'crypto';
 
-// 🔧 Variables d’environnement nécessaires
 const MAKE_WEBHOOK_URL = process.env.MAKE_WEBHOOK_URL;
-const MAKE_API_KEY = process.env.MAKE_API_KEY; // Clé API fournie par Make
+const MAKE_API_KEY = process.env.MAKE_API_KEY;
 const DEBUG_MAKE = process.env.DEBUG_MAKE === 'true';
 
+// Vérification initiale (au démarrage)
+if (!MAKE_WEBHOOK_URL) console.warn('⚠️ MAKE_WEBHOOK_URL manquant — les appels Make échoueront.');
+if (!MAKE_API_KEY) console.warn('⚠️ MAKE_API_KEY manquant — les appels Make seront refusés.');
+
 /**
- * 📨 Envoie un événement vers le webhook Make avec API key
- * @param {Object} payload - Données à envoyer
- * @param {string} event - Nom de l’événement (ex: 'order_created')
- * @returns {Object} - Réponse complète du webhook Make
+ * 📨 Envoie un événement vers Make
  */
 export async function sendToMakeWebhook(payload, event = 'event') {
-  if (!MAKE_WEBHOOK_URL) throw new Error('MAKE_WEBHOOK_URL not configured');
-  if (!MAKE_API_KEY) throw new Error('MAKE_API_KEY not configured');
+  if (!MAKE_WEBHOOK_URL || !MAKE_API_KEY) {
+    console.error('❌ Impossible d’envoyer à Make : variables non configurées');
+    return { ok: false, error: 'Missing env vars' };
+  }
 
   const body = {
     event,
     payload,
     ts: new Date().toISOString(),
+    id: `mk_${Date.now()}_${Math.floor(Math.random() * 1000)}`
   };
 
   try {
@@ -27,33 +31,30 @@ export async function sendToMakeWebhook(payload, event = 'event') {
       timeout: 10000,
       headers: {
         'Content-Type': 'application/json',
-        'x-make-apikey': MAKE_API_KEY, // ✅ Utilisation de la clé API
+        'x-make-apikey': MAKE_API_KEY,
       },
     });
 
-    // ✅ Gestion des codes HTTP ≠ 200
     if (res.status !== 200) {
-      console.error(`[MAKE] HTTP ${res.status} - ${res.statusText}`);
-      throw new Error(`Make webhook error: HTTP ${res.status}`);
+      console.warn(`[MAKE] HTTP ${res.status} - ${res.statusText}`);
+      return { ok: false, error: `HTTP ${res.status}` };
     }
 
-    if (DEBUG_MAKE) console.log('[MAKE → OK]', JSON.stringify(res.data, null, 2));
+    if (DEBUG_MAKE) console.log('[MAKE → OK]', JSON.stringify(res.data).slice(0, 500));
 
-    return res.data; // 🔁 Retourne les données réelles
+    return { ok: true, data: res.data };
   } catch (err) {
     console.error('[MAKE] Webhook error:', err.response?.data || err.message);
-    throw err;
+    return { ok: false, error: err.response?.data || err.message };
   }
 }
 
 /**
- * 🧱 Formate un payload standardisé pour Make
- * @param {string} type - Type d’événement (ex: "order_created")
- * @param {Object} data - Données principales
- * @param {Object} meta - Métadonnées facultatives
+ * 🧱 Formate un payload standardisé
  */
 export function formatMakePayload(type, data = {}, meta = {}) {
   return {
+    id: `mk_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
     type,
     data,
     meta,
@@ -62,14 +63,10 @@ export function formatMakePayload(type, data = {}, meta = {}) {
 }
 
 /**
- * 🔒 Vérifie la signature Make pour les webhooks entrants (optionnel)
- * @param {Object} headers - En-têtes HTTP reçus
- * @param {string} rawBody - Corps brut de la requête
- * @param {string} secret - Clé secrète HMAC si utilisée
- * @returns {boolean} - true si signature valide ou non configurée
+ * 🔒 Vérifie la signature Make pour les webhooks entrants
  */
 export function validateMakeSignature(headers, rawBody, secret = process.env.MAKE_SIGNATURE_SECRET) {
-  if (!secret) return true; // Désactivé si non configuré
+  if (!secret) return true;
 
   const signature = headers['x-make-signature'] || headers['x-hook-signature'];
   if (!signature) {
@@ -77,16 +74,10 @@ export function validateMakeSignature(headers, rawBody, secret = process.env.MAK
     return false;
   }
 
-  const computed = crypto
-    .createHmac('sha256', secret)
-    .update(rawBody)
-    .digest('hex');
-
+  const computed = crypto.createHmac('sha256', secret).update(rawBody).digest('hex');
   const valid = computed === signature;
 
-  if (DEBUG_MAKE) {
-    console.log('[MAKE] Validation signature', { signature, computed, valid });
-  }
+  if (DEBUG_MAKE) console.log('[MAKE] Validation signature', { signature, computed, valid });
 
   return valid;
 }
