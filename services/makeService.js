@@ -40,14 +40,24 @@ if (!MAKE_API_KEY) console.warn('⚠️ MAKE_API_KEY manquant — les appels Mak
 // ---------------------------
 // 📨 Envoie un événement vers Make avec queue et retry automatique
 // ---------------------------
-export async function sendToMakeWebhook(payload, event = 'event') {
+export async function sendToMakeWebhook(payload, event = 'unknown_event') {
   if (!MAKE_WEBHOOK_URL || !MAKE_API_KEY) {
     console.error('❌ Impossible d’envoyer à Make : variables non configurées');
     return { ok: false, error: 'Missing env vars' };
   }
 
+  // ✅ Validation des données avant ajout à la queue
+  if (typeof payload !== 'object' || Array.isArray(payload)) {
+    console.error('[MAKE] Payload invalide, doit être un objet');
+    return { ok: false, error: 'Invalid payload format' };
+  }
+
   queue.push({ payload, event, retries: 0 });
   saveQueue();
+
+  if (DEBUG_MAKE) console.log(`[MAKE] Ajouté à la queue → ${event}`);
+
+  return { ok: true };
 }
 
 // ---------------------------
@@ -62,7 +72,7 @@ async function processQueue() {
     event: item.event,
     payload: item.payload,
     ts: new Date().toISOString(),
-    id: `mk_${Date.now()}_${Math.floor(Math.random() * 1000)}`
+    id: `mk_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
   };
 
   try {
@@ -81,6 +91,7 @@ async function processQueue() {
 
     if (DEBUG_MAKE) console.log('[MAKE → OK]', JSON.stringify(res.data).slice(0, 500));
 
+    // ✅ Suppression réussie de l’élément traité
     queue.shift();
     saveQueue();
   } catch (err) {
@@ -92,7 +103,7 @@ async function processQueue() {
       queue.shift();
       saveQueue();
     } else {
-      // Retry avec délai exponentiel
+      // ✅ Retry avec délai exponentiel sécurisé
       const delay = 1000 * Math.pow(2, item.retries);
       setTimeout(() => processQueue(), delay);
       return;
@@ -100,8 +111,10 @@ async function processQueue() {
   }
 }
 
-// Démarrer un intervalle régulier pour traiter la queue
-setInterval(() => processQueue(), PROCESS_INTERVAL);
+// ✅ Intervalle unique et protégé (empêche double exécution)
+if (!global._makeQueueInterval) {
+  global._makeQueueInterval = setInterval(() => processQueue(), PROCESS_INTERVAL);
+}
 
 // ---------------------------
 // 🧱 Formate un payload standardisé
