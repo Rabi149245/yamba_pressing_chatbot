@@ -1,45 +1,91 @@
-// src/services/promoService.js
+// ✅ src/services/promoService.js
 import { sendToMakeWebhook } from './makeService.js';
 
 /**
- * Récupère la liste des promotions depuis Google Sheets via Make
+ * Récupère la liste des promotions depuis Google Sheets via Make.
+ * 
+ * Le scénario Make "Promotions" doit renvoyer un tableau JSON d'objets
+ * contenant au minimum { id, title, description, discount, validUntil }.
  */
 export async function listPromotions() {
-    try {
-        // Make event "list_promos" doit lire le Google Sheet et renvoyer les promos
-        const promos = await sendToMakeWebhook({ event: 'list_promos' }, 'Promotions');
-        // Assurez-vous que Make renvoie un tableau de promotions
-        return Array.isArray(promos) ? promos : [];
-    } catch (err) {
-        console.error('listPromotions error:', err);
-        return [];
+  try {
+    const response = await sendToMakeWebhook({ action: 'list_promos' }, 'Promotions');
+
+    if (!response || response.ok === false) {
+      console.warn('[PromoService] ⚠️ Réponse Make invalide pour listPromotions :', response);
+      return [];
     }
+
+    const promos = Array.isArray(response) ? response : response?.data || [];
+    console.log(`[PromoService] ✅ ${promos.length} promotion(s) récupérée(s).`);
+    return promos;
+
+  } catch (err) {
+    console.error('[PromoService] ❌ Erreur lors de listPromotions :', err.message || err);
+    return [];
+  }
 }
 
 /**
- * Ajouter une promotion dans Google Sheets via Make
- * @param {Object} promo { title: string, description: string, discount: number, validUntil: string }
+ * Ajoute une promotion dans Google Sheets via Make.
+ * 
+ * @param {Object} promo - Détails de la promotion
+ * @param {string} promo.title - Titre de la promotion
+ * @param {string} promo.description - Description
+ * @param {number} promo.discount - Pourcentage de réduction
+ * @param {string} promo.validUntil - Date de fin de validité (YYYY-MM-DD)
+ * @returns {Promise<boolean>}
  */
 export async function addPromotion(promo) {
-    try {
-        await sendToMakeWebhook({ event: 'add_promo', payload: promo }, 'Promotions');
-        return true;
-    } catch (err) {
-        console.error('addPromotion error:', err);
-        throw err;
+  if (!promo || !promo.title) {
+    console.warn('[PromoService] ⚠️ addPromotion ignoré : données invalides.');
+    return false;
+  }
+
+  try {
+    const payload = { action: 'add_promo', data: promo, ts: new Date().toISOString() };
+    const res = await sendToMakeWebhook(payload, 'Promotions');
+
+    if (res?.ok === false) {
+      console.warn('[PromoService] ⚠️ Make a retourné une erreur lors de addPromotion :', res);
+      return false;
     }
+
+    console.log(`[PromoService] ✅ Promotion "${promo.title}" ajoutée avec succès.`);
+    return true;
+
+  } catch (err) {
+    console.error('[PromoService] ❌ Erreur lors de addPromotion :', err.message || err);
+    return false;
+  }
 }
 
 /**
- * Supprimer une promotion dans Google Sheets via Make
- * @param {string|number} promoId ID unique de la promotion
+ * Supprime une promotion dans Google Sheets via Make.
+ * 
+ * @param {string|number} promoId - Identifiant unique de la promotion
+ * @returns {Promise<boolean>}
  */
 export async function removePromotion(promoId) {
-    try {
-        await sendToMakeWebhook({ event: 'remove_promo', payload: { promoId } }, 'Promotions');
-        return true;
-    } catch (err) {
-        console.error('removePromotion error:', err);
-        throw err;
+  if (!promoId) {
+    console.warn('[PromoService] ⚠️ removePromotion ignoré : promoId manquant.');
+    return false;
+  }
+
+  try {
+    const payload = { action: 'remove_promo', data: { promoId } };
+    const res = await sendToMakeWebhook(payload, 'Promotions');
+
+    if (res?.ok === false) {
+      console.warn('[PromoService] ⚠️ Make a retourné une erreur lors de removePromotion :', res);
+      return false;
     }
+
+    console.log(`[PromoService] ✅ Promotion ${promoId} supprimée avec succès.`);
+    return true;
+
+  } catch (err) {
+    console.error('[PromoService] ❌ Erreur lors de removePromotion :', err.message || err);
+    return false;
+  }
 }
