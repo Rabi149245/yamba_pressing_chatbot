@@ -1,4 +1,4 @@
-// src/services/pointsService.js
+// ✅ src/services/pointsService.js
 import { sendToMakeWebhook } from './makeService.js';
 
 /**
@@ -9,14 +9,14 @@ import { sendToMakeWebhook } from './makeService.js';
  */
 export async function addPoints(clientPhone, points, reason = '') {
   if (!clientPhone || !points || isNaN(points)) {
-    console.warn('⚠️ addPoints appelé avec des paramètres invalides', { clientPhone, points });
+    console.warn('[PointsService] ⚠️ addPoints appelé avec des paramètres invalides', { clientPhone, points });
     return;
   }
 
   try {
     const payload = {
       clientPhone,
-      points,
+      points: Number(points),
       reason,
       ts: new Date().toISOString(),
       action: 'add_points'
@@ -24,41 +24,45 @@ export async function addPoints(clientPhone, points, reason = '') {
 
     const res = await sendToMakeWebhook(payload, 'PointsTransactions_add');
 
+    if (!res) {
+      console.warn('[PointsService] ⚠️ Réponse Make vide pour addPoints');
+      return;
+    }
+
     if (res?.status && res.status !== 'ok') {
-      console.warn('⚠️ addPoints: Make a renvoyé un statut non-ok', res);
+      console.warn('[PointsService] ⚠️ addPoints: statut non-ok reçu de Make', res);
     } else {
-      console.log(`✅ ${points} points ajoutés à ${clientPhone}`);
+      console.log(`[PointsService] ✅ ${points} points ajoutés à ${clientPhone}`);
     }
   } catch (err) {
-    console.error('❌ addPoints error:', err.response?.data || err.message);
+    console.error('[PointsService] ❌ Erreur addPoints :', err.response?.data || err.message);
   }
 }
 
 /**
  * Récupère le solde de points d’un client depuis Make.
- * @param {string} clientPhone
+ * @param {string} clientPhone - Numéro du client
  * @returns {Promise<number>} Solde de points (ou 0 en cas d'erreur)
  */
 export async function getPoints(clientPhone) {
   if (!clientPhone) {
-    console.warn('⚠️ getPoints appelé sans numéro de client');
+    console.warn('[PointsService] ⚠️ getPoints appelé sans numéro de client');
     return 0;
   }
 
   try {
     const res = await sendToMakeWebhook({ clientPhone, action: 'get_points' }, 'PointsTransactions_get');
 
-    // Vérifie la structure de la réponse
     if (!res || typeof res !== 'object') {
-      console.warn('getPoints: réponse Make invalide', res);
+      console.warn('[PointsService] ⚠️ Réponse Make invalide pour getPoints', res);
       return 0;
     }
 
-    const points = Number(res.points || 0);
-    console.log(`💰 Solde de points pour ${clientPhone}: ${points}`);
+    const points = Number(res.points ?? 0);
+    console.log(`[PointsService] 💰 Solde de points pour ${clientPhone} : ${points}`);
     return points;
   } catch (err) {
-    console.error('❌ getPoints error:', err.response?.data || err.message);
+    console.error('[PointsService] ❌ Erreur getPoints :', err.response?.data || err.message);
     return 0;
   }
 }
