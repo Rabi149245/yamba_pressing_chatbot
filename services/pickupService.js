@@ -1,4 +1,4 @@
-// src/services/pickupService.js
+// ✅ src/services/pickupService.js
 import { sendToMakeWebhook } from './makeService.js';
 import * as notificationsService from './notificationsService.js';
 
@@ -11,31 +11,35 @@ import * as notificationsService from './notificationsService.js';
  */
 export async function handlePickupRequest(clientPhone, clientName = 'cher client') {
   if (!clientPhone) {
-    console.warn('⚠️ handlePickupRequest ignoré : numéro de téléphone manquant.');
+    console.warn('[PickupService] ⚠️ handlePickupRequest ignoré : numéro de téléphone manquant.');
     return 'Numéro de téléphone non valide.';
   }
 
   try {
-    const msg = `👕 Bonjour ${clientName}, votre demande de *ramassage à domicile* a bien été enregistrée. 🚚\n\nNotre livreur vous contactera très bientôt pour convenir du passage.\nMerci pour votre confiance 🙏.`;
+    const confirmationMsg = `👕 Bonjour ${clientName}, votre demande de *ramassage à domicile* a bien été enregistrée. 🚚\n\nNotre livreur vous contactera très bientôt pour convenir du passage.\nMerci pour votre confiance 🙏.`;
 
-    // 1️⃣ Envoie la confirmation au client via Make
-    const response = await sendToMakeWebhook(
-      { phone: clientPhone, message: msg },
-      'send_pickup_confirmation'
-    );
+    // 1️⃣ Envoi de la confirmation au client via Make
+    const payload = {
+      phone: clientPhone,
+      message: confirmationMsg,
+      action: 'send_pickup_confirmation',
+      ts: new Date().toISOString()
+    };
 
-    if (response?.ok === false) {
-      console.warn(`⚠️ Make n’a pas confirmé l’envoi du message à ${clientPhone}.`);
+    const makeResponse = await sendToMakeWebhook(payload, 'send_pickup_confirmation');
+
+    if (!makeResponse || (makeResponse.ok === false && makeResponse.status !== 'ok')) {
+      console.warn(`[PickupService] ⚠️ Make n’a pas confirmé l’envoi du message à ${clientPhone}.`, makeResponse);
     }
 
-    // 2️⃣ Journalise la notification localement et dans Make
-    await notificationsService.logNotification(clientPhone, msg, null, 'Pickup');
+    // 2️⃣ Journalisation dans Google Sheets via notificationsService
+    await notificationsService.logNotification(clientPhone, confirmationMsg, null, 'Pickup');
 
-    console.log(`✅ Ramassage confirmé pour ${clientPhone}`);
-    return msg;
+    console.log(`[PickupService] ✅ Ramassage confirmé pour ${clientPhone}`);
+    return confirmationMsg;
 
   } catch (err) {
-    console.error('❌ Erreur lors du traitement du ramassage :', err.message || err);
+    console.error('[PickupService] ❌ Erreur lors du traitement du ramassage :', err.response?.data || err.message || err);
     return `Désolé ${clientName}, une erreur est survenue lors de votre demande de ramassage.`;
   }
 }
