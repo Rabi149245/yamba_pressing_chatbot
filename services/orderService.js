@@ -1,4 +1,4 @@
-// src/services/orderService.js
+// ✅ src/services/orderService.js
 import fs from 'fs';
 import path from 'path';
 import { sendToMakeWebhook } from './makeService.js';
@@ -11,7 +11,7 @@ const ordersPath = path.join(dataDir, 'orders_log.json');
 // Vérification de configuration
 // ---------------------------
 if (!process.env.MAKE_WEBHOOK_URL) {
-  console.warn('[WARN] MAKE_WEBHOOK_URL non configurée — le mode local sera utilisé.');
+  console.warn('[OrderService] ⚠️ MAKE_WEBHOOK_URL non configurée — le mode local sera utilisé.');
 }
 
 // ---------------------------
@@ -21,9 +21,9 @@ export async function readCatalog() {
   try {
     if (!fs.existsSync(cataloguePath)) return [];
     const raw = await fs.promises.readFile(cataloguePath, 'utf-8');
-    return JSON.parse(raw);
+    return JSON.parse(raw || '[]');
   } catch (err) {
-    console.error('[ERROR][readCatalog]', err.message);
+    console.error('[OrderService] ❌ Erreur lecture catalogue :', err.message);
     throw new Error('Impossible de lire le catalogue');
   }
 }
@@ -61,10 +61,11 @@ export async function computePriceFromCatalogue(index, priceType, qty = 1) {
         { event: 'log_order_item', payload: { item, priceType, qty, total } },
         'OrderItems'
       );
-      if (process.env.DEBUG_MAKE === 'true')
-        console.log('[DEBUG][computePriceFromCatalogue] Envoi à Make réussi');
+      if (process.env.DEBUG_MAKE === 'true') {
+        console.log('[OrderService][DEBUG] Envoi à Make réussi (computePriceFromCatalogue)');
+      }
     } catch (e) {
-      console.warn('[WARN][computePriceFromCatalogue] Envoi Make échoué:', e.message);
+      console.warn('[OrderService] ⚠️ Échec envoi Make (computePriceFromCatalogue) :', e.message);
     }
   }
 
@@ -78,11 +79,12 @@ export async function addOrder(order) {
   if (process.env.MAKE_WEBHOOK_URL) {
     try {
       await sendToMakeWebhook({ event: 'create_order', payload: order }, 'Orders');
-      if (process.env.DEBUG_MAKE === 'true')
-        console.log('[DEBUG][addOrder] Commande envoyée à Make');
+      if (process.env.DEBUG_MAKE === 'true') {
+        console.log('[OrderService][DEBUG] Commande envoyée à Make');
+      }
       return { status: 'ok' };
     } catch (err) {
-      console.error('[ERROR][addOrder] Envoi Make échoué:', err.message);
+      console.error('[OrderService] ❌ Erreur envoi commande à Make :', err.message);
       await saveOrderLocally(order, '[FALLBACK après erreur Make]');
       throw err;
     }
@@ -102,28 +104,30 @@ async function saveOrderLocally(order, sourceTag = '') {
 
     // Verrou léger pour éviter les écritures concurrentes
     if (fs.existsSync(lockFile)) {
-      console.warn('[WARN][saveOrderLocally] Fichier verrou détecté — tentative ignorée');
+      console.warn('[OrderService] ⚠️ Verrou détecté — tentative ignorée');
       return { status: 'pending_lock' };
     }
 
     await fs.promises.writeFile(lockFile, Date.now().toString());
 
     const list = fs.existsSync(ordersPath)
-      ? JSON.parse(await fs.promises.readFile(ordersPath, 'utf-8'))
+      ? JSON.parse(await fs.promises.readFile(ordersPath, 'utf-8') || '[]')
       : [];
 
     list.push({ ...order, source: sourceTag, savedAt: new Date().toISOString() });
     await fs.promises.writeFile(ordersPath, JSON.stringify(list, null, 2));
 
     await fs.promises.unlink(lockFile); // libère le verrou
-    console.log(`[INFO][saveOrderLocally] Commande sauvegardée localement (${sourceTag})`);
+    console.log(`[OrderService] ✅ Commande sauvegardée localement (${sourceTag})`);
 
     return { status: 'ok', local: true };
   } catch (err) {
-    console.error('[ERROR][saveOrderLocally] Sauvegarde locale échouée:', err.message);
+    console.error('[OrderService] ❌ Erreur sauvegarde locale :', err.message);
     try {
       if (fs.existsSync(`${ordersPath}.lock`)) await fs.promises.unlink(`${ordersPath}.lock`);
-    } catch {}
+    } catch {
+      // ignorer
+    }
     throw err;
   }
 }
