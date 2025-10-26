@@ -1,4 +1,4 @@
-// src/services/whatsappService.js
+// ✅ src/services/whatsappService.js
 import axios from 'axios';
 import { computePriceFromCatalogue, readCatalog, addOrder } from './orderService.js';
 import { sendToMakeWebhook } from './makeService.js';
@@ -8,13 +8,16 @@ import * as notificationsService from './notificationsService.js';
 import * as agentsService from './agentsService.js';
 import * as humanService from './humanService.js';
 
+// ✅ Variables d’environnement
 const TOKEN = process.env.WHATSAPP_TOKEN;
 const PHONE_ID = process.env.WHATSAPP_PHONE_ID;
 const WHATSAPP_API_URL = `https://graph.facebook.com/v19.0/${PHONE_ID}/messages`;
 
-// ---------------------------
-// Message d’accueil
-// ---------------------------
+if (!TOKEN || !PHONE_ID) {
+  console.warn('[WhatsApp] ⚠️ Vérifiez les variables WHATSAPP_TOKEN et WHATSAPP_PHONE_ID.');
+}
+
+// ✅ Message d’accueil
 const WELCOME_MESSAGE = `Bonjour 👋 et bienvenue chez Pressing Yamba 🧺 
 Je suis votre assistant virtuel. Voici nos services : 
 1️⃣ Lavage à sec
@@ -26,9 +29,7 @@ Je suis votre assistant virtuel. Voici nos services :
 ➡ Répondez avec un chiffre (1 à 5) pour choisir un service.
 Tapez "*" à tout moment pour revenir à ce menu.`;
 
-// ---------------------------
-// Envoi de message texte
-// ---------------------------
+// ✅ Envoi message texte
 export async function sendWhatsAppMessage(to, text) {
   if (!TOKEN || !PHONE_ID) {
     console.error('[WhatsApp] Token ou Phone ID manquant.');
@@ -41,17 +42,15 @@ export async function sendWhatsAppMessage(to, text) {
       headers: { Authorization: `Bearer ${TOKEN}`, 'Content-Type': 'application/json' },
     });
     await notificationsService.logNotification(to, text);
-    console.info(`[WhatsApp] Message envoyé à ${to}`);
+    console.info(`[WhatsApp] ✅ Message envoyé à ${to}`);
     return true;
   } catch (err) {
-    console.error('[WhatsApp] Erreur envoi message :', err.response?.data || err.message);
+    console.error('[WhatsApp] ❌ Erreur envoi message :', err.response?.data || err.message);
     return false;
   }
 }
 
-// ---------------------------
-// Envoi d’image
-// ---------------------------
+// ✅ Envoi d’image
 export async function sendWhatsAppImage(to, imageUrl, caption) {
   if (!TOKEN || !PHONE_ID) {
     console.error('[WhatsApp] Token ou Phone ID manquant.');
@@ -64,17 +63,15 @@ export async function sendWhatsAppImage(to, imageUrl, caption) {
       headers: { Authorization: `Bearer ${TOKEN}`, 'Content-Type': 'application/json' },
     });
     await notificationsService.logNotification(to, caption, imageUrl);
-    console.info(`[WhatsApp] Image envoyée à ${to}`);
+    console.info(`[WhatsApp] ✅ Image envoyée à ${to}`);
     return true;
   } catch (err) {
-    console.error('[WhatsApp] Erreur envoi image :', err.response?.data || err.message);
+    console.error('[WhatsApp] ❌ Erreur envoi image :', err.response?.data || err.message);
     return false;
   }
 }
 
-// ---------------------------
-// Envoi message d’accueil si 24h d’inactivité
-// ---------------------------
+// ✅ Message d’accueil après 24h d’inactivité
 export async function sendWelcomeIfNeeded(to) {
   const now = new Date();
   const lastMessageAt = await userService.getUserLastMessage(to);
@@ -84,9 +81,7 @@ export async function sendWelcomeIfNeeded(to) {
   }
 }
 
-// ---------------------------
-// Gestion des sous-menus
-// ---------------------------
+// ✅ Gestion des sous-menus
 async function handleSubMenuResponses(from, choice) {
   const state = await userService.getUserState(from);
   if (!state?.service) {
@@ -134,7 +129,7 @@ async function handleSubMenuResponses(from, choice) {
         breakdowns.push(`Erreur pour ${it.description}: ${res?.message || 'prix indisponible'}`);
       }
     } catch (err) {
-      console.warn('[WhatsApp] Erreur calcul prix :', err.message);
+      console.warn('[WhatsApp] ⚠️ Erreur calcul prix :', err.message);
       breakdowns.push(`Erreur calcul prix pour ${it.description}`);
     }
   }
@@ -144,7 +139,7 @@ async function handleSubMenuResponses(from, choice) {
   try {
     await addOrder(order);
   } catch (e) {
-    console.warn('[WhatsApp] Échec ajout commande:', e.message);
+    console.warn('[WhatsApp] ⚠️ Échec ajout commande:', e.message);
     if (process.env.MAKE_WEBHOOK_URL) await sendToMakeWebhook({ event: 'create_order', payload: order }, 'Orders');
   }
 
@@ -153,27 +148,26 @@ async function handleSubMenuResponses(from, choice) {
   try {
     await pointsService.addPoints(from, Math.floor(order.Total / 100));
   } catch (e) {
-    console.warn('[WhatsApp] Ajout de points échoué :', e.message);
+    console.warn('[WhatsApp] ⚠️ Ajout de points échoué :', e.message);
   }
 
   await userService.clearUserState(from);
 }
 
-// ---------------------------
-// Gestion des messages entrants
-// ---------------------------
+// ✅ Gestion des messages entrants
 export async function handleIncomingMessage(message) {
   const from = message.from;
   if (!from) return;
 
   const body = (message.text?.body || '').trim().toLowerCase();
 
-  // 🔄 Transfert vers Make (log d’entrée)
+  // ✅ Envoi du log vers Make
   if (process.env.MAKE_WEBHOOK_URL) {
     try {
       await sendToMakeWebhook({ incoming: message }, 'incoming_message');
+      console.info('[Make] ✅ Message entrant envoyé à Make.');
     } catch {
-      console.warn('[Make] Envoi du message entrant échoué.');
+      console.warn('[Make] ⚠️ Envoi du message entrant échoué.');
     }
   }
 
@@ -187,21 +181,21 @@ export async function handleIncomingMessage(message) {
     return;
   }
 
-  // 🔹 Retour au menu
+  // ✅ Retour au menu
   if (body === '*') {
     await sendWhatsAppMessage(from, WELCOME_MESSAGE);
     await userService.updateUserLastMessage(from, now);
     return;
   }
 
-  // 🔹 Sous-menus
+  // ✅ Sous-menus
   if (['1_dep', '2_pickup', '1_oui', '2_non'].includes(body)) {
     await handleSubMenuResponses(from, body);
     await userService.updateUserLastMessage(from, now);
     return;
   }
 
-  // 🔹 Menu principal
+  // ✅ Menu principal
   switch (body) {
     case '1':
       await sendWhatsAppImage(from, 'https://exemple.com/lavage_sec.jpg', 'Voici les prix pour le lavage à sec.');
@@ -229,7 +223,7 @@ export async function handleIncomingMessage(message) {
       break;
   }
 
-  // 🔹 Commandes complexes (ex: "1, NE, 2")
+  // ✅ Commandes complexes
   if (body.includes(',')) {
     const parts = body.split(',').map(p => p.trim());
     if (parts.length >= 3 && /^\d+$/.test(parts[0]) && /^\d+$/.test(parts[2])) {
@@ -257,7 +251,7 @@ export async function handleIncomingMessage(message) {
     }
   }
 
-  // 🔹 Réponse par défaut
+  // ✅ Réponse par défaut
   await sendWhatsAppMessage(from, "Je n’ai pas compris votre choix. Tapez 1-5, '*' pour revenir, ou envoyez 'N, NE/NS/REP, qty' pour commander.");
   await userService.updateUserLastMessage(from, now);
 }
