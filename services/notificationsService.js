@@ -1,4 +1,4 @@
-// src/services/notificationsService.js
+// ✅ src/services/notificationsService.js
 import { sendToMakeWebhook } from './makeService.js';
 
 /**
@@ -15,7 +15,7 @@ import { sendToMakeWebhook } from './makeService.js';
  */
 export async function logNotification(phone, message, mediaUrl = null, type = 'Message') {
   if (!phone || !message) {
-    console.warn('⚠️ logNotification ignoré : phone ou message manquant.');
+    console.warn('[NotificationsService] ⚠️ logNotification ignoré : phone ou message manquant.');
     return false;
   }
 
@@ -30,15 +30,16 @@ export async function logNotification(phone, message, mediaUrl = null, type = 'M
 
     const res = await sendToMakeWebhook(payload, 'NotificationsLog_add');
 
-    if (res?.ok === false) {
-      console.warn('⚠️ Make a retourné une erreur lors du log de notification :', res);
+    if (!res || (res.ok === false && res.status !== 'ok')) {
+      console.warn('[NotificationsService] ⚠️ Erreur Make lors du log de notification :', res);
       return false;
     }
 
-    console.log(`✅ Notification enregistrée pour ${phone} (${type}).`);
+    console.log(`[NotificationsService] ✅ Notification enregistrée pour ${phone} (${type})`);
     return true;
+
   } catch (err) {
-    console.error('❌ logNotification error:', err.message || err);
+    console.error('[NotificationsService] ❌ logNotification error:', err.response?.data || err.message || err);
     return false;
   }
 }
