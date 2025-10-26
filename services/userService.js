@@ -1,4 +1,4 @@
-// src/services/userService.js
+// ✅ src/services/userService.js
 import fs from 'fs';
 import path from 'path';
 import { sendToMakeWebhook } from './makeService.js';
@@ -10,14 +10,23 @@ const userStatePath = path.join(dataDir, 'user_states.json');
 // Lecture / écriture locale (simple et fiable)
 // ---------------------------
 async function readUserStates() {
-  if (!fs.existsSync(userStatePath)) return {};
-  const raw = await fs.promises.readFile(userStatePath, 'utf-8');
-  return JSON.parse(raw || '{}');
+  try {
+    if (!fs.existsSync(userStatePath)) return {};
+    const raw = await fs.promises.readFile(userStatePath, 'utf-8');
+    return JSON.parse(raw || '{}');
+  } catch (err) {
+    console.error('[UserService] ❌ Erreur lecture user_states.json :', err.message);
+    return {};
+  }
 }
 
 async function writeUserStates(states) {
-  await fs.promises.mkdir(dataDir, { recursive: true });
-  await fs.promises.writeFile(userStatePath, JSON.stringify(states, null, 2));
+  try {
+    await fs.promises.mkdir(dataDir, { recursive: true });
+    await fs.promises.writeFile(userStatePath, JSON.stringify(states, null, 2));
+  } catch (err) {
+    console.error('[UserService] ❌ Erreur écriture user_states.json :', err.message);
+  }
 }
 
 // ---------------------------
@@ -53,9 +62,9 @@ export async function getUserLastMessage(phone) {
   try {
     const payload = { phone };
     const response = await sendToMakeWebhook(payload, 'Users_getLastMessage');
-    return response?.LastOrderAt || null;
+    return response?.LastOrderAt || response?.lastMessageAt || null;
   } catch (err) {
-    console.error('getUserLastMessage error:', err);
+    console.error('[UserService] ⚠️ Erreur getUserLastMessage :', err.message);
     return null;
   }
 }
@@ -64,6 +73,6 @@ export async function updateUserLastMessage(phone, date) {
   try {
     await sendToMakeWebhook({ phone, lastMessageAt: date }, 'Users_updateLastMessage');
   } catch (err) {
-    console.error('updateUserLastMessage error:', err);
+    console.error('[UserService] ⚠️ Erreur updateUserLastMessage :', err.message);
   }
 }
