@@ -1,4 +1,3 @@
-// ✅ src/services/whatsappService.js
 import axios from 'axios';
 import { computePriceFromCatalogue, readCatalog, addOrder } from './orderService.js';
 import { sendToMakeWebhook } from './makeService.js';
@@ -36,6 +35,11 @@ export async function sendWhatsAppMessage(to, text) {
     return false;
   }
 
+  if (!to || !text) {
+    console.warn('[WhatsApp] ⚠️ Paramètres manquants pour envoyer le message.');
+    return false;
+  }
+
   try {
     const payload = { messaging_product: 'whatsapp', to, text: { body: text } };
     await axios.post(WHATSAPP_API_URL, payload, {
@@ -54,6 +58,11 @@ export async function sendWhatsAppMessage(to, text) {
 export async function sendWhatsAppImage(to, imageUrl, caption) {
   if (!TOKEN || !PHONE_ID) {
     console.error('[WhatsApp] Token ou Phone ID manquant.');
+    return false;
+  }
+
+  if (!to || !imageUrl) {
+    console.warn('[WhatsApp] ⚠️ Paramètres manquants pour envoyer l’image.');
     return false;
   }
 
