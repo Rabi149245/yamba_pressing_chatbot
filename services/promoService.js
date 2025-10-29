@@ -1,4 +1,3 @@
-// ✅ src/services/promoService.js
 import { sendToMakeWebhook } from './makeService.js';
 
 /**
@@ -37,7 +36,7 @@ export async function listPromotions() {
  * @returns {Promise<boolean>}
  */
 export async function addPromotion(promo) {
-  if (!promo || !promo.title) {
+  if (!promo || !promo.title || !promo.discount || !promo.validUntil) {
     console.warn('[PromoService] ⚠️ addPromotion ignoré : données invalides.');
     return false;
   }
@@ -46,6 +45,7 @@ export async function addPromotion(promo) {
     const payload = { action: 'add_promo', data: promo, ts: new Date().toISOString() };
     const res = await sendToMakeWebhook(payload, 'Promotions');
 
+    // Vérification de la réponse de Make
     if (res?.ok === false) {
       console.warn('[PromoService] ⚠️ Make a retourné une erreur lors de addPromotion :', res);
       return false;
@@ -76,6 +76,7 @@ export async function removePromotion(promoId) {
     const payload = { action: 'remove_promo', data: { promoId } };
     const res = await sendToMakeWebhook(payload, 'Promotions');
 
+    // Vérification de la réponse de Make
     if (res?.ok === false) {
       console.warn('[PromoService] ⚠️ Make a retourné une erreur lors de removePromotion :', res);
       return false;
