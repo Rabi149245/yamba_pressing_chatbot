@@ -1,4 +1,3 @@
-// ✅ src/services/pickupService.js
 import { sendToMakeWebhook } from './makeService.js';
 import * as notificationsService from './notificationsService.js';
 
@@ -28,12 +27,17 @@ export async function handlePickupRequest(clientPhone, clientName = 'cher client
 
     const makeResponse = await sendToMakeWebhook(payload, 'send_pickup_confirmation');
 
+    // 2️⃣ Vérification de la réponse de Make
     if (!makeResponse || (makeResponse.ok === false && makeResponse.status !== 'ok')) {
       console.warn(`[PickupService] ⚠️ Make n’a pas confirmé l’envoi du message à ${clientPhone}.`, makeResponse);
+      return 'Erreur lors de l’envoi de la confirmation. Veuillez réessayer plus tard.';
     }
 
-    // 2️⃣ Journalisation dans Google Sheets via notificationsService
-    await notificationsService.logNotification(clientPhone, confirmationMsg, null, 'Pickup');
+    // 3️⃣ Journalisation dans Google Sheets via notificationsService
+    const logSuccess = await notificationsService.logNotification(clientPhone, confirmationMsg, null, 'Pickup');
+    if (!logSuccess) {
+      console.warn(`[PickupService] ⚠️ Impossible de journaliser la notification pour ${clientPhone}`);
+    }
 
     console.log(`[PickupService] ✅ Ramassage confirmé pour ${clientPhone}`);
     return confirmationMsg;
