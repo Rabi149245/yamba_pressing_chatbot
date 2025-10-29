@@ -1,4 +1,3 @@
-// ✅ src/services/reminderService.js
 import { sendToMakeWebhook } from './makeService.js';
 import { sendWhatsAppMessage } from './whatsappService.js';
 import * as notificationsService from './notificationsService.js';
@@ -19,6 +18,7 @@ export async function checkAndSendReminders() {
     // 1️⃣ Demande à Make la liste des commandes à rappeler
     const pending = await sendToMakeWebhook({ action: 'get_pending_orders' }, 'get_pending_orders');
 
+    // Vérification de la réponse de Make
     if (!pending || (pending.ok === false && !Array.isArray(pending))) {
       console.warn('[ReminderService] ⚠️ Réponse Make invalide ou vide :', pending);
       return false;
