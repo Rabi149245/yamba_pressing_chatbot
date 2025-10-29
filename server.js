@@ -1,4 +1,3 @@
-// server.js
 import 'dotenv/config';
 import express from 'express';
 import bodyParser from 'body-parser';
@@ -52,6 +51,7 @@ app.get('/catalogue', async (req, res) => {
     const data = await readCatalog();
     return res.json({ status: 'ok', catalogue: data });
   } catch (err) {
+    console.error('[Server] ❌ Erreur lecture du catalogue :', err.message);
     return res.status(500).json({ status: 'error', error: err.message });
   }
 });
@@ -128,6 +128,7 @@ app.post('/pickup', async (req, res) => {
     );
     return res.json({ status: 'ok', message: 'Pickup request forwarded' });
   } catch (err) {
+    console.error('[Server] ❌ Erreur lors de l’envoi du ramassage:', err.message);
     return res.status(500).json({ error: err.message });
   }
 });
@@ -137,6 +138,7 @@ app.post('/commande', async (req, res) => {
     await sendToMakeWebhook({ event: 'create_order', payload: req.body }, 'Orders');
     return res.json({ status: 'ok', message: 'Order forwarded to Make' });
   } catch (err) {
+    console.error('[Server] ❌ Erreur lors de l’envoi de la commande à Make:', err.message);
     return res.status(500).json({ status: 'error', error: err.message });
   }
 });
@@ -146,6 +148,7 @@ app.get('/promotions', async (req, res) => {
     await sendToMakeWebhook({ event: 'list_promos' }, 'Promotions');
     return res.json({ status: 'requested' });
   } catch (e) {
+    console.error('[Server] ❌ Erreur lors de la récupération des promotions:', e.message);
     return res.status(500).json({ error: e.message });
   }
 });
@@ -155,6 +158,7 @@ app.post('/fidelite', async (req, res) => {
     await sendToMakeWebhook({ event: 'update_points', payload: req.body }, 'PointsTransactions');
     return res.json({ status: 'ok' });
   } catch (e) {
+    console.error('[Server] ❌ Erreur lors de la mise à jour des points de fidélité:', e.message);
     return res.status(500).json({ error: e.message });
   }
 });
@@ -164,6 +168,7 @@ app.post('/human', async (req, res) => {
     await sendToMakeWebhook({ event: 'create_human_request', payload: req.body }, 'HumanRequest');
     return res.json({ status: 'ok', message: 'Human request forwarded' });
   } catch (e) {
+    console.error('[Server] ❌ Erreur lors de la demande d’assistance humaine:', e.message);
     return res.status(500).json({ error: e.message });
   }
 });
@@ -176,6 +181,7 @@ app.post('/send-whatsapp', async (req, res) => {
     const result = await sendWhatsAppMessage(to, message);
     return res.json({ status: 'ok', message: 'Message envoyé ✅' });
   } catch (err) {
+    console.error('[Server] ❌ Erreur lors de l’envoi de WhatsApp:', err.message);
     return res.status(500).json({ status: 'error', message: err.message });
   }
 });
