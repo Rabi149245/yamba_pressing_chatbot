@@ -1,4 +1,3 @@
-// ✅ src/services/pointsService.js
 import { sendToMakeWebhook } from './makeService.js';
 
 /**
@@ -8,7 +7,7 @@ import { sendToMakeWebhook } from './makeService.js';
  * @param {string} reason - Raison facultative
  */
 export async function addPoints(clientPhone, points, reason = '') {
-  if (!clientPhone || !points || isNaN(points)) {
+  if (!clientPhone || !points || isNaN(points) || points <= 0) {
     console.warn('[PointsService] ⚠️ addPoints appelé avec des paramètres invalides', { clientPhone, points });
     return;
   }
@@ -24,16 +23,13 @@ export async function addPoints(clientPhone, points, reason = '') {
 
     const res = await sendToMakeWebhook(payload, 'PointsTransactions_add');
 
-    if (!res) {
-      console.warn('[PointsService] ⚠️ Réponse Make vide pour addPoints');
+    // Vérification de la réponse de Make
+    if (!res || res.status !== 'ok') {
+      console.warn('[PointsService] ⚠️ Réponse Make invalide pour addPoints', res);
       return;
     }
 
-    if (res?.status && res.status !== 'ok') {
-      console.warn('[PointsService] ⚠️ addPoints: statut non-ok reçu de Make', res);
-    } else {
-      console.log(`[PointsService] ✅ ${points} points ajoutés à ${clientPhone}`);
-    }
+    console.log(`[PointsService] ✅ ${points} points ajoutés à ${clientPhone}`);
   } catch (err) {
     console.error('[PointsService] ❌ Erreur addPoints :', err.response?.data || err.message);
   }
@@ -53,6 +49,7 @@ export async function getPoints(clientPhone) {
   try {
     const res = await sendToMakeWebhook({ clientPhone, action: 'get_points' }, 'PointsTransactions_get');
 
+    // Vérification de la réponse de Make
     if (!res || typeof res !== 'object') {
       console.warn('[PointsService] ⚠️ Réponse Make invalide pour getPoints', res);
       return 0;
