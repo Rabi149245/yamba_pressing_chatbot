@@ -1,4 +1,3 @@
-// ✅ src/services/notificationsService.js
 import { sendToMakeWebhook } from './makeService.js';
 
 /**
