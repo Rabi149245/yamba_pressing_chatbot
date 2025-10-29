@@ -1,4 +1,3 @@
-// ✅ src/services/orderService.js
 import fs from 'fs';
 import path from 'path';
 import { sendToMakeWebhook } from './makeService.js';
@@ -19,7 +18,7 @@ if (!process.env.MAKE_WEBHOOK_URL) {
 // ---------------------------
 export async function readCatalog() {
   try {
-    if (!fs.existsSync(cataloguePath)) return [];
+    if (!fs.existsSync(cataloguePath)) throw new Error("Catalogue non trouvé");
     const raw = await fs.promises.readFile(cataloguePath, 'utf-8');
     return JSON.parse(raw || '[]');
   } catch (err) {
@@ -57,7 +56,7 @@ export async function computePriceFromCatalogue(index, priceType, qty = 1) {
   // Journalisation vers Make
   if (process.env.MAKE_WEBHOOK_URL) {
     try {
-      await sendToMakeWebhook(
+      const res = await sendToMakeWebhook(
         { event: 'log_order_item', payload: { item, priceType, qty, total } },
         'OrderItems'
       );
@@ -78,15 +77,19 @@ export async function computePriceFromCatalogue(index, priceType, qty = 1) {
 export async function addOrder(order) {
   if (process.env.MAKE_WEBHOOK_URL) {
     try {
-      await sendToMakeWebhook({ event: 'create_order', payload: order }, 'Orders');
+      const res = await sendToMakeWebhook({ event: 'create_order', payload: order }, 'Orders');
       if (process.env.DEBUG_MAKE === 'true') {
         console.log('[OrderService][DEBUG] Commande envoyée à Make');
+      }
+      if (!res || res.status !== 'ok') {
+        console.warn('[OrderService] ⚠️ Réponse Make invalide :', res);
+        return { status: 'error', message: 'Échec lors de l’envoi à Make' };
       }
       return { status: 'ok' };
     } catch (err) {
       console.error('[OrderService] ❌ Erreur envoi commande à Make :', err.message);
       await saveOrderLocally(order, '[FALLBACK après erreur Make]');
-      throw err;
+      return { status: 'error', message: 'Échec lors de l’envoi à Make, sauvegarde locale effectuée' };
     }
   } else {
     // Sauvegarde locale en fallback direct
@@ -128,6 +131,6 @@ async function saveOrderLocally(order, sourceTag = '') {
     } catch {
       // ignorer
     }
-    throw err;
+    return { status: 'error', message: 'Erreur lors de la sauvegarde locale' };
   }
 }
