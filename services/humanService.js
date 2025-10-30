@@ -1,4 +1,3 @@
-// ✅ src/services/humanService.js
 import { sendToMakeWebhook } from './makeService.js';
 import * as notificationsService from './notificationsService.js';
 
@@ -38,6 +37,7 @@ export async function escalateToHuman(clientPhone, clientName = 'client(e)', mes
       console.log(`[HumanService] ✅ Escalade humaine réussie pour ${clientPhone}`);
     } else {
       console.warn('[HumanService] ⚠️ Réponse inattendue de Make pour escalate_to_human:', makeResponse);
+      return `Désolé ${clientName}, nous avons rencontré un problème pour vous connecter à un agent humain.`;
     }
 
     // 3️⃣ Journalisation locale / notification interne
@@ -50,6 +50,6 @@ export async function escalateToHuman(clientPhone, clientName = 'client(e)', mes
     return confirmationMsg;
   } catch (err) {
     console.error('[HumanService] ❌ Erreur lors de la redirection vers un agent humain :', err.message || err);
-    throw err;
+    return 'Une erreur est survenue lors de la mise en relation avec un agent humain. Veuillez réessayer plus tard.';
   }
 }
