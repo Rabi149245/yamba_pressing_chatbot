@@ -1,4 +1,3 @@
-// src/services/feedbackService.js
 import { sendToMakeWebhook } from './makeService.js';
 
 /**
@@ -18,6 +17,12 @@ export async function logFeedback(phone, message, rating = null) {
     return false;
   }
 
+  // Vérification de la validité du rating (entre 1 et 5)
+  if (rating && (rating < 1 || rating > 5)) {
+    console.warn('⚠️ logFeedback ignoré : rating invalide, doit être entre 1 et 5.');
+    return false;
+  }
+
   try {
     const payload = {
       phone,
@@ -28,6 +33,7 @@ export async function logFeedback(phone, message, rating = null) {
 
     const res = await sendToMakeWebhook(payload, 'Feedbacks_add');
 
+    // Vérification de la réponse de Make
     if (res?.ok === false) {
       console.warn('⚠️ Make a retourné une erreur lors du log du feedback :', res);
       return false;
