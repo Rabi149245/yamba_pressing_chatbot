@@ -1,4 +1,3 @@
-// src/services/agentsService.js
 import { sendToMakeWebhook } from './makeService.js';
 
 /**
@@ -12,7 +11,7 @@ export async function assignAgent() {
 
     // Vérifie la structure de la réponse
     if (!response || typeof response !== 'object') {
-      console.warn('assignAgent: réponse Make invalide ou vide', response);
+      console.warn('[AgentsService] ⚠️ Réponse Make invalide ou vide', response);
       return null;
     }
 
@@ -20,14 +19,14 @@ export async function assignAgent() {
 
     // Validation basique
     if (!Phone) {
-      console.warn('assignAgent: agent sans numéro', response);
+      console.warn('[AgentsService] ⚠️ Agent sans numéro', response);
       return null;
     }
 
-    console.log(`✅ Agent assigné : ${Name || 'Inconnu'} (${Phone})`);
+    console.log(`[AgentsService] ✅ Agent assigné : ${Name || 'Inconnu'} (${Phone})`);
     return { Name: Name || 'Agent', Phone };
   } catch (err) {
-    console.error('❌ assignAgent error:', err.response?.data || err.message);
+    console.error('[AgentsService] ❌ assignAgent error:', err.response?.data || err.message);
     return null;
   }
 }
