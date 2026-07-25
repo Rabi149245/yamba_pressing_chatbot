@@ -1,6 +1,6 @@
 import axios from 'axios';
 import crypto from 'crypto';
-import { computePriceFromCatalogue, readCatalog, addOrder } from './orderService.js';
+import { computePriceFromCatalogue, addOrder } from './orderService.js';
 import { sendToMakeWebhook } from './makeService.js';
 import * as userService from './userService.js';
 import * as pointsService from './pointsService.js';
@@ -108,15 +108,6 @@ export async function sendWhatsAppImage(to, imageUrl, caption) {
   }
 }
 
-// ✅ Message d’accueil après 24h d’inactivité
-export async function sendWelcomeIfNeeded(to) {
-  const now = new Date();
-  const lastMessageAt = await userService.getUserLastMessage(to);
-  if (!lastMessageAt || now - new Date(lastMessageAt) > 24 * 60 * 60 * 1000) {
-    await sendWhatsAppMessage(to, WELCOME_MESSAGE);
-    await userService.updateUserLastMessage(to, now);
-  }
-}
 
 // ✅ Sélection de l'article après le choix d'un service (1/2/3)
 // state.priceType a été fixé par le menu principal (NS = lavage à sec, NE = lavage à eau, REP = repassage)

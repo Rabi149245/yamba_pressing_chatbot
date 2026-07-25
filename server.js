@@ -5,6 +5,8 @@ import cron from 'node-cron';
 import { handleIncomingMessage, sendWhatsAppMessage, validateMetaWebhookSignature } from './services/whatsappService.js';
 import { sendToMakeWebhook } from './services/makeService.js';
 import * as pickupService from './services/pickupService.js';
+import * as promoService from './services/promoService.js';
+import * as pointsService from './services/pointsService.js';
 import { readCatalog } from './services/orderService.js';
 import { checkAndSendReminders } from './services/reminderService.js';
 
@@ -168,10 +170,32 @@ app.post('/commande', requireApiKey, async (req, res) => {
 
 app.get('/promotions', requireApiKey, async (req, res) => {
   try {
-    await sendToMakeWebhook({ event: 'list_promos' }, 'Promotions');
-    return res.json({ status: 'requested' });
+    const promos = await promoService.listPromotions();
+    return res.json({ status: 'ok', promotions: promos });
   } catch (e) {
     console.error('[Server] ❌ Erreur lors de la récupération des promotions:', e.message);
+    return res.status(500).json({ error: e.message });
+  }
+});
+
+app.post('/promotions', requireApiKey, async (req, res) => {
+  try {
+    const ok = await promoService.addPromotion(req.body);
+    if (!ok) return res.status(400).json({ status: 'error', error: 'Promotion invalide ou échec de l’ajout.' });
+    return res.json({ status: 'ok' });
+  } catch (e) {
+    console.error('[Server] ❌ Erreur lors de l’ajout de la promotion:', e.message);
+    return res.status(500).json({ error: e.message });
+  }
+});
+
+app.delete('/promotions/:id', requireApiKey, async (req, res) => {
+  try {
+    const ok = await promoService.removePromotion(req.params.id);
+    if (!ok) return res.status(400).json({ status: 'error', error: 'Échec de la suppression.' });
+    return res.json({ status: 'ok' });
+  } catch (e) {
+    console.error('[Server] ❌ Erreur lors de la suppression de la promotion:', e.message);
     return res.status(500).json({ error: e.message });
   }
 });
@@ -182,6 +206,16 @@ app.post('/fidelite', requireApiKey, async (req, res) => {
     return res.json({ status: 'ok' });
   } catch (e) {
     console.error('[Server] ❌ Erreur lors de la mise à jour des points de fidélité:', e.message);
+    return res.status(500).json({ error: e.message });
+  }
+});
+
+app.get('/fidelite/:phone', requireApiKey, async (req, res) => {
+  try {
+    const points = await pointsService.getPoints(req.params.phone);
+    return res.json({ status: 'ok', phone: req.params.phone, points });
+  } catch (e) {
+    console.error('[Server] ❌ Erreur lors de la récupération des points:', e.message);
     return res.status(500).json({ error: e.message });
   }
 });

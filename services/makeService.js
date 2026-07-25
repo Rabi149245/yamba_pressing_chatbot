@@ -1,5 +1,4 @@
 import axios from 'axios';
-import crypto from 'crypto';
 import fs from 'fs';
 import path from 'path';
 
@@ -151,35 +150,3 @@ export async function queryMakeWebhook(payload, event = 'unknown_query', timeout
   }
 }
 
-// ---------------------------
-// 🧱 Formate un payload standardisé
-// ---------------------------
-export function formatMakePayload(type, data = {}, meta = {}) {
-  return {
-    id: `mk_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
-    type,
-    data,
-    meta,
-    ts: new Date().toISOString(),
-  };
-}
-
-// ---------------------------
-// 🔒 Vérifie la signature Make pour les webhooks entrants
-// ---------------------------
-export function validateMakeSignature(headers, rawBody, secret = process.env.MAKE_SIGNATURE_SECRET) {
-  if (!secret) return true;
-
-  const signature = headers['x-make-signature'] || headers['x-hook-signature'];
-  if (!signature) {
-    console.warn('[MAKE] Signature absente');
-    return false;
-  }
-
-  const computed = crypto.createHmac('sha256', secret).update(rawBody).digest('hex');
-  const valid = computed === signature;
-
-  if (DEBUG_MAKE) console.log('[MAKE] Validation signature', { signature, computed, valid });
-
-  return valid;
-}
