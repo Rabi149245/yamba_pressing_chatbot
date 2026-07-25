@@ -2,3 +2,9 @@ node_modules/
 .env
 *.log
 .DS_Store
+
+# Fichiers générés à l'exécution (état local, secours hors ligne, file d'attente Make)
+data/user_states.json
+data/orders_log.json
+data/orders_log.json.lock
+makeQueue.json
