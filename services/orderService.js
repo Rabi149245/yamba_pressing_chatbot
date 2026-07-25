@@ -100,15 +100,22 @@ export async function addOrder(order) {
 // ---------------------------
 // Sauvegarde locale robuste (anti-conflit)
 // ---------------------------
+const LOCK_STALE_MS = 10000; // un verrou plus vieux que ça est considéré abandonné (crash du process)
+
 async function saveOrderLocally(order, sourceTag = '') {
   try {
     await fs.promises.mkdir(dataDir, { recursive: true });
     const lockFile = `${ordersPath}.lock`;
 
-    // Verrou léger pour éviter les écritures concurrentes
+    // Verrou léger pour éviter les écritures concurrentes (avec expiration anti-blocage permanent)
     if (fs.existsSync(lockFile)) {
-      console.warn('[OrderService] ⚠️ Verrou détecté — tentative ignorée');
-      return { status: 'pending_lock' };
+      const lockAge = Date.now() - Number(await fs.promises.readFile(lockFile, 'utf-8').catch(() => '0'));
+      if (lockAge < LOCK_STALE_MS) {
+        console.warn('[OrderService] ⚠️ Verrou détecté — tentative ignorée');
+        return { status: 'pending_lock' };
+      }
+      console.warn('[OrderService] ⚠️ Verrou périmé détecté (process précédent probablement interrompu) — suppression.');
+      await fs.promises.unlink(lockFile).catch(() => {});
     }
 
     await fs.promises.writeFile(lockFile, Date.now().toString());

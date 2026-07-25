@@ -1,4 +1,5 @@
 import axios from 'axios';
+import crypto from 'crypto';
 import { computePriceFromCatalogue, readCatalog, addOrder } from './orderService.js';
 import { sendToMakeWebhook } from './makeService.js';
 import * as userService from './userService.js';
@@ -6,6 +7,8 @@ import * as pointsService from './pointsService.js';
 import * as notificationsService from './notificationsService.js';
 import * as agentsService from './agentsService.js';
 import * as humanService from './humanService.js';
+import * as pickupService from './pickupService.js';
+import * as feedbackService from './feedbackService.js';
 
 // ✅ Variables d’environnement
 const TOKEN = process.env.WHATSAPP_TOKEN;
@@ -17,8 +20,8 @@ if (!TOKEN || !PHONE_ID) {
 }
 
 // ✅ Message d’accueil
-const WELCOME_MESSAGE = `Bonjour 👋 et bienvenue chez Pressing Yamba 🧺 
-Je suis votre assistant virtuel. Voici nos services : 
+const WELCOME_MESSAGE = `Bonjour 👋 et bienvenue chez Pressing Yamba 🧺
+Je suis votre assistant virtuel. Voici nos services :
 1️⃣ Lavage à sec
 2️⃣ Lavage à eau
 3️⃣ Repassage
@@ -26,7 +29,32 @@ Je suis votre assistant virtuel. Voici nos services :
 5️⃣ Parler à un agent humain 👩🏽‍💼
 
 ➡ Répondez avec un chiffre (1 à 5) pour choisir un service.
-Tapez "*" à tout moment pour revenir à ce menu.`;
+Tapez "*" à tout moment pour revenir à ce menu.
+💬 Tapez "avis <note 1-5> <commentaire>" pour laisser un avis à tout moment.`;
+
+// ---------------------------
+// 🔒 Vérification de la signature Meta (X-Hub-Signature-256) du webhook WhatsApp
+// ---------------------------
+export function validateMetaWebhookSignature(headers, rawBody, secret = process.env.WHATSAPP_APP_SECRET) {
+  if (!secret) {
+    console.error('[Webhook] ❌ WHATSAPP_APP_SECRET non configuré — requête refusée par défaut.');
+    return false;
+  }
+
+  const signatureHeader = headers['x-hub-signature-256'];
+  if (!signatureHeader || !signatureHeader.startsWith('sha256=')) {
+    console.warn('[Webhook] ⚠️ Signature Meta absente ou mal formée.');
+    return false;
+  }
+
+  const expected = 'sha256=' + crypto.createHmac('sha256', secret).update(rawBody).digest('hex');
+
+  try {
+    return crypto.timingSafeEqual(Buffer.from(signatureHeader), Buffer.from(expected));
+  } catch {
+    return false;
+  }
+}
 
 // ✅ Envoi message texte
 export async function sendWhatsAppMessage(to, text) {
@@ -168,6 +196,15 @@ async function handleSubMenuResponses(from, choice) {
 
   await sendWhatsAppMessage(from, `Commande enregistrée ✅\n${pending.breakdown}\nOption : ${optionLabel}\nTotal : ${order.Total} F`);
 
+  if (choice === '2_pickup') {
+    try {
+      const pickupMsg = await pickupService.handlePickupRequest(from);
+      await sendWhatsAppMessage(from, pickupMsg);
+    } catch (e) {
+      console.warn('[WhatsApp] ⚠️ Échec de la confirmation de ramassage :', e.message);
+    }
+  }
+
   try {
     await pointsService.addPoints(from, Math.floor(order.Total / 100));
   } catch (e) {
@@ -207,6 +244,21 @@ export async function handleIncomingMessage(message) {
   // ✅ Retour au menu
   if (body === '*') {
     await sendWhatsAppMessage(from, WELCOME_MESSAGE);
+    await userService.updateUserLastMessage(from, now);
+    return;
+  }
+
+  // ✅ Avis client (disponible à tout moment)
+  if (/^avis\b/i.test(body)) {
+    const match = body.match(/^avis\s+([1-5])\s*(.*)$/i);
+    if (!match) {
+      await sendWhatsAppMessage(from, 'Pour laisser un avis, écrivez : avis <note de 1 à 5> <votre commentaire>. Exemple : avis 5 Très bon service !');
+    } else {
+      const rating = parseInt(match[1], 10);
+      const comment = match[2]?.trim() || `Note ${rating}/5`;
+      const ok = await feedbackService.logFeedback(from, comment, rating);
+      await sendWhatsAppMessage(from, ok ? 'Merci pour votre avis ! 🙏' : 'Une erreur est survenue, veuillez réessayer plus tard.');
+    }
     await userService.updateUserLastMessage(from, now);
     return;
   }

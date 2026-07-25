@@ -2,8 +2,9 @@ import 'dotenv/config';
 import express from 'express';
 import bodyParser from 'body-parser';
 import cron from 'node-cron';
-import { handleIncomingMessage, sendWhatsAppMessage } from './services/whatsappService.js';
-import { sendToMakeWebhook, validateMakeSignature } from './services/makeService.js';
+import { handleIncomingMessage, sendWhatsAppMessage, validateMetaWebhookSignature } from './services/whatsappService.js';
+import { sendToMakeWebhook } from './services/makeService.js';
+import * as pickupService from './services/pickupService.js';
 import { readCatalog } from './services/orderService.js';
 import { checkAndSendReminders } from './services/reminderService.js';
 
@@ -18,6 +19,7 @@ if (!process.env.MAKE_WEBHOOK_URL) {
 const PORT = process.env.PORT || 5000;
 const ENABLE_REMINDERS = process.env.ENABLE_REMINDERS === "true";
 const DEBUG_MAKE = process.env.DEBUG_MAKE === "true";
+const APP_API_KEY = process.env.APP_API_KEY;
 
 // ---------------------------
 // Vérification console
@@ -25,6 +27,26 @@ const DEBUG_MAKE = process.env.DEBUG_MAKE === "true";
 console.log("Serveur démarré sur le port", PORT);
 console.log("Webhook Make :", process.env.MAKE_WEBHOOK_URL);
 console.log("Rappels activés :", ENABLE_REMINDERS);
+
+if (!APP_API_KEY) {
+  console.error("⚠️ APP_API_KEY non configurée : les routes /pickup, /commande, /promotions, /fidelite, /human et /send-whatsapp refuseront toutes les requêtes.");
+}
+if (!process.env.WHATSAPP_APP_SECRET) {
+  console.error("⚠️ WHATSAPP_APP_SECRET non configurée : le webhook WhatsApp refusera tous les messages entrants (signature Meta impossible à vérifier).");
+}
+
+// ---------------------------
+// 🔒 Middleware : protège les routes internes par clé API
+// ---------------------------
+function requireApiKey(req, res, next) {
+  if (!APP_API_KEY) {
+    return res.status(503).json({ status: 'error', error: 'Route non configurée (APP_API_KEY manquante).' });
+  }
+  if (req.headers['x-api-key'] !== APP_API_KEY) {
+    return res.status(401).json({ status: 'error', error: 'Clé API invalide ou manquante.' });
+  }
+  next();
+}
 
 // ---------------------------
 // Initialisation Express
@@ -80,11 +102,11 @@ app.get('/webhook', (req, res) => {
 // ---------------------------
 app.post('/webhook', async (req, res) => {
   try {
-    // ✅ Vérification de signature Make si envoyée
-    const valid = validateMakeSignature(req.headers, req.rawBody);
+    // ✅ Vérification de signature Meta (X-Hub-Signature-256)
+    const valid = validateMetaWebhookSignature(req.headers, req.rawBody);
     if (!valid) {
-      console.warn('Signature Make invalide — requête refusée');
-      return res.status(401).send('Invalid Make signature');
+      console.warn('Signature Meta invalide ou manquante — requête refusée');
+      return res.status(401).send('Invalid signature');
     }
 
     const body = req.body;
@@ -116,7 +138,7 @@ app.post('/webhook', async (req, res) => {
 // ---------------------------
 // Autres routes vers Make
 // ---------------------------
-app.post('/pickup', async (req, res) => {
+app.post('/pickup', requireApiKey, async (req, res) => {
   const { phone, lat, lon, address } = req.body;
   if (!process.env.MAKE_WEBHOOK_URL)
     return res.status(500).json({ error: 'Make webhook not configured' });
@@ -126,6 +148,7 @@ app.post('/pickup', async (req, res) => {
       { event: 'create_pickup', payload: { phone, lat, lon, address } },
       'Pickups'
     );
+    if (phone) await pickupService.handlePickupRequest(phone);
     return res.json({ status: 'ok', message: 'Pickup request forwarded' });
   } catch (err) {
     console.error('[Server] ❌ Erreur lors de l’envoi du ramassage:', err.message);
@@ -133,7 +156,7 @@ app.post('/pickup', async (req, res) => {
   }
 });
 
-app.post('/commande', async (req, res) => {
+app.post('/commande', requireApiKey, async (req, res) => {
   try {
     await sendToMakeWebhook({ event: 'create_order', payload: req.body }, 'Orders');
     return res.json({ status: 'ok', message: 'Order forwarded to Make' });
@@ -143,7 +166,7 @@ app.post('/commande', async (req, res) => {
   }
 });
 
-app.get('/promotions', async (req, res) => {
+app.get('/promotions', requireApiKey, async (req, res) => {
   try {
     await sendToMakeWebhook({ event: 'list_promos' }, 'Promotions');
     return res.json({ status: 'requested' });
@@ -153,7 +176,7 @@ app.get('/promotions', async (req, res) => {
   }
 });
 
-app.post('/fidelite', async (req, res) => {
+app.post('/fidelite', requireApiKey, async (req, res) => {
   try {
     await sendToMakeWebhook({ event: 'update_points', payload: req.body }, 'PointsTransactions');
     return res.json({ status: 'ok' });
@@ -163,7 +186,7 @@ app.post('/fidelite', async (req, res) => {
   }
 });
 
-app.post('/human', async (req, res) => {
+app.post('/human', requireApiKey, async (req, res) => {
   try {
     await sendToMakeWebhook({ event: 'create_human_request', payload: req.body }, 'HumanRequest');
     return res.json({ status: 'ok', message: 'Human request forwarded' });
@@ -173,7 +196,7 @@ app.post('/human', async (req, res) => {
   }
 });
 
-app.post('/send-whatsapp', async (req, res) => {
+app.post('/send-whatsapp', requireApiKey, async (req, res) => {
   const { to, message } = req.body;
   if (!to || !message) return res.status(400).json({ error: 'Missing "to" or "message"' });
 
