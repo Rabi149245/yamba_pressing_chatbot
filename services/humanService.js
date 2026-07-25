@@ -33,8 +33,8 @@ export async function escalateToHuman(clientPhone, clientName = 'client(e)', mes
       console.warn('[HumanService] ⚠️ Échec d’envoi vers Make :', err.message);
     }
 
-    if (makeResponse?.status === 'ok' || makeResponse?.success) {
-      console.log(`[HumanService] ✅ Escalade humaine réussie pour ${clientPhone}`);
+    if (makeResponse && makeResponse.ok !== false) {
+      console.log(`[HumanService] ✅ Escalade humaine mise en file d’attente pour ${clientPhone}`);
     } else {
       console.warn('[HumanService] ⚠️ Réponse inattendue de Make pour escalate_to_human:', makeResponse);
       return `Désolé ${clientName}, nous avons rencontré un problème pour vous connecter à un agent humain.`;

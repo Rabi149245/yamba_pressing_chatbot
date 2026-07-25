@@ -1,4 +1,4 @@
-import { sendToMakeWebhook } from './makeService.js';
+import { queryMakeWebhook } from './makeService.js';
 
 /**
  * Récupère un agent disponible depuis Make
@@ -6,8 +6,8 @@ import { sendToMakeWebhook } from './makeService.js';
  */
 export async function assignAgent() {
   try {
-    // Appel à Make pour récupérer un agent disponible
-    const response = await sendToMakeWebhook({ action: 'get_available_agent' }, 'Agents_getAvailable');
+    // Appel synchrone à Make pour récupérer un agent disponible
+    const response = await queryMakeWebhook({ action: 'get_available_agent' }, 'Agents_getAvailable');
 
     // Vérifie la structure de la réponse
     if (!response || typeof response !== 'object') {

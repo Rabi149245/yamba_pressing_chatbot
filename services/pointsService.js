@@ -1,4 +1,4 @@
-import { sendToMakeWebhook } from './makeService.js';
+import { sendToMakeWebhook, queryMakeWebhook } from './makeService.js';
 
 /**
  * Ajoute des points de fidélité à un client.
@@ -23,13 +23,13 @@ export async function addPoints(clientPhone, points, reason = '') {
 
     const res = await sendToMakeWebhook(payload, 'PointsTransactions_add');
 
-    // Vérification de la réponse de Make
-    if (!res || res.status !== 'ok') {
-      console.warn('[PointsService] ⚠️ Réponse Make invalide pour addPoints', res);
+    // Vérification de la mise en file d'attente (la queue est asynchrone, pas de statut Make immédiat)
+    if (!res || res.ok === false) {
+      console.warn('[PointsService] ⚠️ Échec de mise en file d’attente pour addPoints', res);
       return;
     }
 
-    console.log(`[PointsService] ✅ ${points} points ajoutés à ${clientPhone}`);
+    console.log(`[PointsService] ✅ ${points} points en file d’attente pour ${clientPhone}`);
   } catch (err) {
     console.error('[PointsService] ❌ Erreur addPoints :', err.response?.data || err.message);
   }
@@ -47,7 +47,7 @@ export async function getPoints(clientPhone) {
   }
 
   try {
-    const res = await sendToMakeWebhook({ clientPhone, action: 'get_points' }, 'PointsTransactions_get');
+    const res = await queryMakeWebhook({ clientPhone, action: 'get_points' }, 'PointsTransactions_get');
 
     // Vérification de la réponse de Make
     if (!res || typeof res !== 'object') {

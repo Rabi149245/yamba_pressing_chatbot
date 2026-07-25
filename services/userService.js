@@ -1,6 +1,5 @@
 import fs from 'fs';
 import path from 'path';
-import { sendToMakeWebhook } from './makeService.js';
 
 const dataDir = path.resolve('./data');
 const userStatePath = path.join(dataDir, 'user_states.json');
@@ -55,8 +54,12 @@ export async function saveUserState(phone, newState) {
   await writeUserStates(states);
 }
 
+// Alias utilisé par whatsappService.js pour mémoriser le service en cours de sélection
+export const updateUserState = saveUserState;
+
 // ---------------------------
-// 🔹 Effacer complètement l'état utilisateur
+// 🔹 Effacer la sélection en cours (service, priceType, article en attente)
+// tout en conservant lastMessageAt
 // ---------------------------
 export async function clearUserState(phone) {
   if (!phone || typeof phone !== 'string' || phone.trim().length === 0) {
@@ -65,12 +68,16 @@ export async function clearUserState(phone) {
   }
 
   const states = await readUserStates();
-  delete states[phone];
+  if (states[phone]) {
+    const { lastMessageAt } = states[phone];
+    states[phone] = lastMessageAt ? { lastMessageAt } : undefined;
+    if (!states[phone]) delete states[phone];
+  }
   await writeUserStates(states);
 }
 
 // ---------------------------
-// 🔹 Historique de message (via Make)
+// 🔹 Historique de message (stocké localement, pas de round-trip Make nécessaire)
 // ---------------------------
 export async function getUserLastMessage(phone) {
   if (!phone || typeof phone !== 'string' || phone.trim().length === 0) {
@@ -78,14 +85,8 @@ export async function getUserLastMessage(phone) {
     return null;
   }
 
-  try {
-    const payload = { phone };
-    const response = await sendToMakeWebhook(payload, 'Users_getLastMessage');
-    return response?.LastOrderAt || response?.lastMessageAt || null;
-  } catch (err) {
-    console.error('[UserService] ⚠️ Erreur getUserLastMessage :', err.message);
-    return null;
-  }
+  const states = await readUserStates();
+  return states[phone]?.lastMessageAt || null;
 }
 
 export async function updateUserLastMessage(phone, date) {
@@ -94,9 +95,6 @@ export async function updateUserLastMessage(phone, date) {
     return;
   }
 
-  try {
-    await sendToMakeWebhook({ phone, lastMessageAt: date }, 'Users_updateLastMessage');
-  } catch (err) {
-    console.error('[UserService] ⚠️ Erreur updateUserLastMessage :', err.message);
-  }
+  const iso = date instanceof Date ? date.toISOString() : date;
+  await saveUserState(phone, { lastMessageAt: iso });
 }
