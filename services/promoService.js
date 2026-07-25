@@ -1,4 +1,4 @@
-import { sendToMakeWebhook } from './makeService.js';
+import { sendToMakeWebhook, queryMakeWebhook } from './makeService.js';
 
 /**
  * Récupère la liste des promotions depuis Google Sheets via Make.
@@ -8,7 +8,7 @@ import { sendToMakeWebhook } from './makeService.js';
  */
 export async function listPromotions() {
   try {
-    const response = await sendToMakeWebhook({ action: 'list_promos' }, 'Promotions');
+    const response = await queryMakeWebhook({ action: 'list_promos' }, 'Promotions_list');
 
     if (!response || response.ok === false) {
       console.warn('[PromoService] ⚠️ Réponse Make invalide pour listPromotions :', response);

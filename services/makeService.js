@@ -116,6 +116,42 @@ if (!global._makeQueueInterval) {
 }
 
 // ---------------------------
+// 📥 Requête synchrone à Make (attend une vraie réponse)
+// Réservé aux lectures qui ont besoin d'une donnée en retour
+// (solde de points, agent disponible, promotions, commandes en attente).
+// N'utilise pas la queue : si Make ne répond pas, l'appelant reçoit null.
+// ---------------------------
+export async function queryMakeWebhook(payload, event = 'unknown_query', timeoutMs = 10000) {
+  if (!MAKE_WEBHOOK_URL || !MAKE_API_KEY) {
+    console.error('❌ Impossible d’interroger Make : variables non configurées');
+    return null;
+  }
+
+  const body = {
+    event,
+    payload,
+    ts: new Date().toISOString(),
+    id: `mkq_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
+  };
+
+  try {
+    const res = await axios.post(MAKE_WEBHOOK_URL, body, {
+      timeout: timeoutMs,
+      headers: {
+        'Content-Type': 'application/json',
+        'x-make-apikey': MAKE_API_KEY,
+      },
+    });
+
+    if (DEBUG_MAKE) console.log(`[MAKE][QUERY:${event}] →`, JSON.stringify(res.data).slice(0, 500));
+    return res.data;
+  } catch (err) {
+    console.error(`[MAKE][QUERY:${event}] Erreur :`, err.response?.data || err.message);
+    return null;
+  }
+}
+
+// ---------------------------
 // 🧱 Formate un payload standardisé
 // ---------------------------
 export function formatMakePayload(type, data = {}, meta = {}) {

@@ -90,60 +90,74 @@ export async function sendWelcomeIfNeeded(to) {
   }
 }
 
-// ✅ Gestion des sous-menus
-async function handleSubMenuResponses(from, choice) {
-  const state = await userService.getUserState(from);
-  if (!state?.service) {
-    await sendWhatsAppMessage(from, "Erreur : aucun service sélectionné. Tapez '*' pour revenir au menu.");
+// ✅ Sélection de l'article après le choix d'un service (1/2/3)
+// state.priceType a été fixé par le menu principal (NS = lavage à sec, NE = lavage à eau, REP = repassage)
+async function handleItemSelection(from, state, body) {
+  const parts = body.split(',').map(p => p.trim());
+  const itemNumber = parseInt(parts[0], 10);
+  const qty = parts[1] ? parseInt(parts[1], 10) : 1;
+
+  if (!itemNumber || !qty || qty <= 0) {
+    await sendWhatsAppMessage(from, "Format invalide. Envoyez le numéro de l'article, éventuellement suivi de la quantité (ex: 8 ou 8,2).");
     return;
   }
 
-  const catalog = await readCatalog();
-  let catalogItem = catalog.find(
-    i =>
-      (i.Service && i.Service.toLowerCase().includes(state.service.replace('', ' '))) ||
-      i.Désignation?.toLowerCase().includes(state.service.replace('', ' '))
+  const res = await computePriceFromCatalogue(itemNumber, state.priceType, qty);
+  if (res?.status !== 'ok') {
+    await sendWhatsAppMessage(
+      from,
+      `Article introuvable ou prix indisponible pour ce service (${res?.message || 'erreur'}). Vérifiez le numéro dans le catalogue et réessayez.`
+    );
+    return;
+  }
+
+  await userService.saveUserState(from, {
+    pendingItem: {
+      itemNumber,
+      qty,
+      priceType: state.priceType,
+      description: res.item.Désignation,
+      breakdown: res.breakdown,
+      total: res.total,
+    },
+  });
+
+  await sendWhatsAppMessage(
+    from,
+    `🧾 ${res.breakdown}\nTotal : ${res.total} FCFA\n\nComment souhaitez-vous procéder ?\n1️⃣ Dépôt au pressing → répondez "1_dep"\n2️⃣ Enlèvement à domicile → répondez "2_pickup"`
   );
-  if (!catalogItem) catalogItem = catalog[0];
+}
 
-  const order = { ClientPhone: from, ItemsJSON: [], Total: 0, Status: 'Pending', CreatedAt: new Date().toISOString() };
-  const itemIndex = catalogItem?.N || catalogItem?.Désignation;
+// ✅ Gestion des sous-menus (finalise la commande de l'article en attente)
+async function handleSubMenuResponses(from, choice) {
+  const state = await userService.getUserState(from);
+  const pending = state?.pendingItem;
 
-  switch (choice) {
-    case '1_dep':
-      order.ItemsJSON.push({ N: itemIndex, description: catalogItem.Désignation, option: 'Dépôt au pressing', priceType: 'NE', qty: 1 });
-      break;
-    case '2_pickup':
-      order.ItemsJSON.push({ N: itemIndex, description: catalogItem.Désignation, option: 'Enlèvement à domicile', priceType: 'NE', qty: 1 });
-      break;
-    case '1_oui':
-      order.ItemsJSON.push({ N: itemIndex, description: catalogItem.Désignation, option: 'Amidonnage', priceType: catalogItem.AM ? 'AM' : 'NE', qty: 1 });
-      break;
-    case '2_non':
-      order.ItemsJSON.push({ N: itemIndex, description: catalogItem.Désignation, option: 'Sans amidonnage', priceType: 'NE', qty: 1 });
-      break;
+  if (!pending) {
+    await sendWhatsAppMessage(from, "Aucun article en attente de confirmation. Tapez '*' pour revenir au menu, choisissez un service puis indiquez le numéro de l'article.");
+    return;
   }
 
-  let total = 0;
-  const breakdowns = [];
+  const optionLabel =
+    choice === '1_dep' ? 'Dépôt au pressing' :
+    choice === '2_pickup' ? 'Enlèvement à domicile' :
+    choice === '1_oui' ? 'Avec amidonnage' :
+    'Sans amidonnage';
 
-  for (const it of order.ItemsJSON) {
-    try {
-      const res = await computePriceFromCatalogue(it.N, it.priceType, it.qty);
-      if (res?.status === 'ok') {
-        it.total = res.total;
-        breakdowns.push(res.breakdown);
-        total += res.total;
-      } else {
-        breakdowns.push(`Erreur pour ${it.description}: ${res?.message || 'prix indisponible'}`);
-      }
-    } catch (err) {
-      console.warn('[WhatsApp] ⚠️ Erreur calcul prix :', err.message);
-      breakdowns.push(`Erreur calcul prix pour ${it.description}`);
-    }
-  }
-
-  order.Total = total;
+  const order = {
+    ClientPhone: from,
+    ItemsJSON: [{
+      N: pending.itemNumber,
+      description: pending.description,
+      option: optionLabel,
+      priceType: pending.priceType,
+      qty: pending.qty,
+      total: pending.total,
+    }],
+    Total: pending.total,
+    Status: 'Pending',
+    CreatedAt: new Date().toISOString(),
+  };
 
   try {
     await addOrder(order);
@@ -152,7 +166,7 @@ async function handleSubMenuResponses(from, choice) {
     if (process.env.MAKE_WEBHOOK_URL) await sendToMakeWebhook({ event: 'create_order', payload: order }, 'Orders');
   }
 
-  await sendWhatsAppMessage(from, `Commande enregistrée ✅\nDétails:\n${breakdowns.join('\n')}\nTotal estimé : ${order.Total} F`);
+  await sendWhatsAppMessage(from, `Commande enregistrée ✅\n${pending.breakdown}\nOption : ${optionLabel}\nTotal : ${order.Total} F`);
 
   try {
     await pointsService.addPoints(from, Math.floor(order.Total / 100));
@@ -197,9 +211,18 @@ export async function handleIncomingMessage(message) {
     return;
   }
 
-  // ✅ Sous-menus
+  // ✅ Sous-menus (finalisation de l'article en attente)
   if (['1_dep', '2_pickup', '1_oui', '2_non'].includes(body)) {
     await handleSubMenuResponses(from, body);
+    await userService.updateUserLastMessage(from, now);
+    return;
+  }
+
+  const state = await userService.getUserState(from);
+
+  // ✅ Sélection d'un article de catalogue après avoir choisi un service (1/2/3)
+  if (state?.priceType && /^\d+(\s*,\s*\d+)?$/.test(body)) {
+    await handleItemSelection(from, state, body);
     await userService.updateUserLastMessage(from, now);
     return;
   }
@@ -208,26 +231,36 @@ export async function handleIncomingMessage(message) {
   switch (body) {
     case '1':
       await sendWhatsAppImage(from, 'https://exemple.com/lavage_sec.jpg', 'Voici les prix pour le lavage à sec.');
-      await userService.updateUserState(from, { service: 'lavage_sec' });
-      break;
+      await userService.updateUserState(from, { service: 'lavage_sec', priceType: 'NS' });
+      await sendWhatsAppMessage(from, "Indiquez le numéro de l'article du catalogue et la quantité (ex: 8,2).");
+      await userService.updateUserLastMessage(from, now);
+      return;
     case '2':
       await sendWhatsAppImage(from, 'https://exemple.com/lavage_eau.jpg', 'Voici les prix pour le lavage à eau.');
-      await userService.updateUserState(from, { service: 'lavage_eau' });
-      break;
+      await userService.updateUserState(from, { service: 'lavage_eau', priceType: 'NE' });
+      await sendWhatsAppMessage(from, "Indiquez le numéro de l'article du catalogue et la quantité (ex: 8,2).");
+      await userService.updateUserLastMessage(from, now);
+      return;
     case '3':
       await sendWhatsAppImage(from, 'https://exemple.com/repassage.jpg', 'Voici les prix pour le repassage.');
-      await userService.updateUserState(from, { service: 'repassage' });
-      break;
+      await userService.updateUserState(from, { service: 'repassage', priceType: 'REP' });
+      await sendWhatsAppMessage(from, "Indiquez le numéro de l'article du catalogue et la quantité (ex: 8,2).");
+      await userService.updateUserLastMessage(from, now);
+      return;
     case '4':
       await sendWhatsAppImage(from, 'https://exemple.com/autres_services.jpg', 'Services supplémentaires.');
       await userService.updateUserState(from, { service: 'autres_services' });
-      break;
-    case '5':
+      await sendWhatsAppMessage(from, "Envoyez : numéro de l'article, type (NE/NS/REP), quantité. Exemple : 13,NE,1");
+      await userService.updateUserLastMessage(from, now);
+      return;
+    case '5': {
       await sendWhatsAppMessage(from, 'Merci ! 😊 Un membre de notre équipe va vous répondre.');
       const agent = await agentsService.assignAgent();
       if (agent) await sendWhatsAppMessage(agent.Phone, `Nouvelle demande d’assistance de ${from}`);
-      await humanService.createHumanRequest(from);
-      break;
+      await humanService.escalateToHuman(from);
+      await userService.updateUserLastMessage(from, now);
+      return;
+    }
     default:
       break;
   }

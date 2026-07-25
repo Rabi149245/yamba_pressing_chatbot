@@ -81,8 +81,8 @@ export async function addOrder(order) {
       if (process.env.DEBUG_MAKE === 'true') {
         console.log('[OrderService][DEBUG] Commande envoyée à Make');
       }
-      if (!res || res.status !== 'ok') {
-        console.warn('[OrderService] ⚠️ Réponse Make invalide :', res);
+      if (!res || res.ok === false) {
+        console.warn('[OrderService] ⚠️ Échec de mise en file d’attente :', res);
         return { status: 'error', message: 'Échec lors de l’envoi à Make' };
       }
       return { status: 'ok' };
