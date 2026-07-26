@@ -74,7 +74,9 @@ export async function computePriceFromCatalogue(index, priceType, qty = 1) {
 export async function addOrder(order) {
   if (process.env.MAKE_WEBHOOK_URL) {
     try {
-      const res = await sendToMakeWebhook(order, 'Orders');
+      // Google Sheets attend une cellule texte, pas un tableau/objet imbriqué
+      const makePayload = { ...order, ItemsJSON: JSON.stringify(order.ItemsJSON) };
+      const res = await sendToMakeWebhook(makePayload, 'Orders');
       if (process.env.DEBUG_MAKE === 'true') {
         console.log('[OrderService][DEBUG] Commande envoyée à Make');
       }

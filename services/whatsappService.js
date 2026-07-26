@@ -182,7 +182,7 @@ async function handleSubMenuResponses(from, choice) {
     await addOrder(order);
   } catch (e) {
     console.warn('[WhatsApp] ⚠️ Échec ajout commande:', e.message);
-    if (process.env.MAKE_WEBHOOK_URL) await sendToMakeWebhook(order, 'Orders');
+    if (process.env.MAKE_WEBHOOK_URL) await sendToMakeWebhook({ ...order, ItemsJSON: JSON.stringify(order.ItemsJSON) }, 'Orders');
   }
 
   await sendWhatsAppMessage(from, `Commande enregistrée ✅\n${pending.breakdown}\nOption : ${optionLabel}\nTotal : ${order.Total} F`);
