@@ -5,6 +5,7 @@
     "NE": 250,
     "NS": 400,
     "REP": null,
+    "AM": 1000,
     "Image_URL": "https://drive.google.com/uc?id=1F3t19q_K_96UyUv8zijt0Se9i07icK3u",
     "Catégorie": "Autre"
   },
@@ -14,6 +15,7 @@
     "NE": 900,
     "NS": 1600,
     "REP": 300,
+    "AM": 1000,
     "Image_URL": "https://drive.google.com/uc?id=1MBGQL9438YK7y1XqTqlnH8R-Q6YBSJCe",
     "Catégorie": "Autre"
   },
@@ -23,6 +25,7 @@
     "NE": 800,
     "NS": 1500,
     "REP": 300,
+    "AM": 1000,
     "Image_URL": "https://drive.google.com/uc?id=1nLBuSjV5mCjnf5JT0qnKh0o6H-ry1BxS",
     "Catégorie": "Autre"
   },
@@ -32,6 +35,7 @@
     "NE": 600,
     "NS": 1000,
     "REP": 300,
+    "AM": 1000,
     "Image_URL": "https://drive.google.com/uc?id=1EG0nPdxsWLyA5N19KTFpuxfsVjrNFAff",
     "Catégorie": "Autre"
   },
@@ -41,6 +45,7 @@
     "NE": 750,
     "NS": 1250,
     "REP": 300,
+    "AM": 1000,
     "Image_URL": "https://drive.google.com/uc?id=1ExjQQJnfzBUNTZZke41AL4fecifwFqsg",
     "Catégorie": "Autre"
   },
@@ -50,6 +55,7 @@
     "NE": 250,
     "NS": 400,
     "REP": null,
+    "AM": 1000,
     "Image_URL": "https://drive.google.com/uc?id=1vmwWTYWFYlLYyxsMGbfG4B6orm0jjyVq",
     "Catégorie": "Autre"
   },
@@ -59,6 +65,7 @@
     "NE": 250,
     "NS": 400,
     "REP": 100,
+    "AM": 1000,
     "Image_URL": "https://drive.google.com/uc?id=1nLBuSjV5mCjnf5JT0qnKh0o6H-ry1BxS",
     "Catégorie": "Autre"
   },
@@ -68,6 +75,7 @@
     "NE": 600,
     "NS": 1000,
     "REP": 300,
+    "AM": 1000,
     "Image_URL": "https://drive.google.com/uc?id=1nLBuSjV5mCjnf5JT0qnKh0o6H-ry1BxS",
     "Catégorie": "Haut"
   },
@@ -77,6 +85,7 @@
     "NE": 600,
     "NS": 1000,
     "REP": 300,
+    "AM": 1000,
     "Image_URL": "https://drive.google.com/uc?id=1nLBuSjV5mCjnf5JT0qnKh0o6H-ry1BxS",
     "Catégorie": "Haut"
   },
@@ -86,6 +95,7 @@
     "NE": 600,
     "NS": 1000,
     "REP": 300,
+    "AM": 1000,
     "Image_URL": "https://drive.google.com/uc?id=1nLBuSjV5mCjnf5JT0qnKh0o6H-ry1BxS",
     "Catégorie": "Haut"
   },
@@ -95,6 +105,7 @@
     "NE": 600,
     "NS": 1000,
     "REP": 300,
+    "AM": 1000,
     "Image_URL": "https://drive.google.com/uc?id=1nLBuSjV5mCjnf5JT0qnKh0o6H-ry1BxS",
     "Catégorie": "Haut"
   },
@@ -104,6 +115,7 @@
     "NE": 500,
     "NS": 1000,
     "REP": 300,
+    "AM": 1000,
     "Image_URL": "https://drive.google.com/uc?id=1nLBuSjV5mCjnf5JT0qnKh0o6H-ry1BxS",
     "Catégorie": "Haut"
   },
@@ -113,6 +125,7 @@
     "NE": 1400,
     "NS": 2500,
     "REP": 700,
+    "AM": 1000,
     "Image_URL": "https://drive.google.com/uc?id=1nLBuSjV5mCjnf5JT0qnKh0o6H-ry1BxS",
     "Catégorie": "Costume/Veste"
   },
@@ -122,6 +135,7 @@
     "NE": 2000,
     "NS": 3500,
     "REP": 900,
+    "AM": 1000,
     "Image_URL": "https://drive.google.com/uc?id=1nLBuSjV5mCjnf5JT0qnKh0o6H-ry1BxS",
     "Catégorie": "Costume/Veste"
   },
@@ -131,6 +145,7 @@
     "NE": 3500,
     "NS": 6000,
     "REP": 750,
+    "AM": 1000,
     "Image_URL": "https://drive.google.com/uc?id=1nLBuSjV5mCjnf5JT0qnKh0o6H-ry1BxS",
     "Catégorie": "Drap/Grand"
   },
@@ -140,6 +155,7 @@
     "NE": 1000,
     "NS": 1500,
     "REP": 500,
+    "AM": 1000,
     "Image_URL": "https://drive.google.com/uc?id=1nLBuSjV5mCjnf5JT0qnKh0o6H-ry1BxS",
     "Catégorie": "Drap/Grand"
   },
@@ -149,6 +165,7 @@
     "NE": 200,
     "NS": 350,
     "REP": 100,
+    "AM": 1000,
     "Image_URL": "https://drive.google.com/uc?id=1nLBuSjV5mCjnf5JT0qnKh0o6H-ry1BxS",
     "Catégorie": "Autre"
   },
@@ -158,6 +175,7 @@
     "NE": 300,
     "NS": 400,
     "REP": 200,
+    "AM": 1000,
     "Image_URL": "https://drive.google.com/uc?id=1nLBuSjV5mCjnf5JT0qnKh0o6H-ry1BxS",
     "Catégorie": "Autre"
   },
@@ -167,6 +185,7 @@
     "NE": 4000,
     "NS": 7000,
     "REP": 1000,
+    "AM": 1000,
     "Image_URL": "https://drive.google.com/uc?id=1nLBuSjV5mCjnf5JT0qnKh0o6H-ry1BxS",
     "Catégorie": "Drap/Grand"
   },
@@ -176,6 +195,7 @@
     "NE": 1500,
     "NS": 2500,
     "REP": 750,
+    "AM": 1000,
     "Image_URL": "https://drive.google.com/uc?id=1nLBuSjV5mCjnf5JT0qnKh0o6H-ry1BxS",
     "Catégorie": "Drap/Grand"
   },
@@ -185,6 +205,7 @@
     "NE": 700,
     "NS": 1250,
     "REP": 300,
+    "AM": 1000,
     "Image_URL": "https://drive.google.com/uc?id=1nLBuSjV5mCjnf5JT0qnKh0o6H-ry1BxS",
     "Catégorie": "Ensemble/Robe"
   },
@@ -194,6 +215,7 @@
     "NE": 1500,
     "NS": 2500,
     "REP": 400,
+    "AM": 1000,
     "Image_URL": "https://drive.google.com/uc?id=1nLBuSjV5mCjnf5JT0qnKh0o6H-ry1BxS",
     "Catégorie": "Ensemble/Robe"
   },
@@ -203,6 +225,7 @@
     "NE": 2000,
     "NS": 3500,
     "REP": 600,
+    "AM": 1000,
     "Image_URL": "https://drive.google.com/uc?id=1nLBuSjV5mCjnf5JT0qnKh0o6H-ry1BxS",
     "Catégorie": "Ensemble/Robe"
   },
@@ -212,6 +235,7 @@
     "NE": 1400,
     "NS": 2500,
     "REP": 400,
+    "AM": 1000,
     "Image_URL": "https://drive.google.com/uc?id=1nLBuSjV5mCjnf5JT0qnKh0o6H-ry1BxS",
     "Catégorie": "Ensemble/Robe"
   },
@@ -221,6 +245,7 @@
     "NE": 1000,
     "NS": 1750,
     "REP": 400,
+    "AM": 1000,
     "Image_URL": "https://drive.google.com/uc?id=1nLBuSjV5mCjnf5JT0qnKh0o6H-ry1BxS",
     "Catégorie": "Ensemble/Robe"
   },
@@ -230,6 +255,7 @@
     "NE": 1500,
     "NS": 2500,
     "REP": 600,
+    "AM": 1000,
     "Image_URL": "https://drive.google.com/uc?id=1nLBuSjV5mCjnf5JT0qnKh0o6H-ry1BxS",
     "Catégorie": "Ensemble/Robe"
   },
@@ -239,6 +265,7 @@
     "NE": 1000,
     "NS": 1750,
     "REP": 500,
+    "AM": 1000,
     "Image_URL": "https://drive.google.com/uc?id=1nLBuSjV5mCjnf5JT0qnKh0o6H-ry1BxS",
     "Catégorie": "Ensemble/Robe"
   },
@@ -248,6 +275,7 @@
     "NE": 500,
     "NS": 1000,
     "REP": 300,
+    "AM": 1000,
     "Image_URL": "https://drive.google.com/uc?id=1nLBuSjV5mCjnf5JT0qnKh0o6H-ry1BxS",
     "Catégorie": "Haut"
   },
@@ -257,6 +285,7 @@
     "NE": 1000,
     "NS": 2000,
     "REP": 500,
+    "AM": 1000,
     "Image_URL": "https://drive.google.com/uc?id=1nLBuSjV5mCjnf5JT0qnKh0o6H-ry1BxS",
     "Catégorie": "Autre"
   },
@@ -266,6 +295,7 @@
     "NE": 1000,
     "NS": 2000,
     "REP": 500,
+    "AM": 1000,
     "Image_URL": "https://drive.google.com/uc?id=1nLBuSjV5mCjnf5JT0qnKh0o6H-ry1BxS",
     "Catégorie": "Autre"
   },
@@ -275,6 +305,7 @@
     "NE": 500,
     "NS": 1000,
     "REP": 400,
+    "AM": 1000,
     "Image_URL": "https://drive.google.com/uc?id=1nLBuSjV5mCjnf5JT0qnKh0o6H-ry1BxS",
     "Catégorie": "Autre"
   },
@@ -284,6 +315,7 @@
     "NE": 17500,
     "NS": null,
     "REP": null,
+    "AM": 1000,
     "Image_URL": "https://drive.google.com/uc?id=1nLBuSjV5mCjnf5JT0qnKh0o6H-ry1BxS",
     "Catégorie": "Drap/Grand"
   },
@@ -293,6 +325,7 @@
     "NE": 7500,
     "NS": null,
     "REP": null,
+    "AM": 1000,
     "Image_URL": "https://drive.google.com/uc?id=1nLBuSjV5mCjnf5JT0qnKh0o6H-ry1BxS",
     "Catégorie": "Drap/Grand"
   },
@@ -302,6 +335,7 @@
     "NE": 500,
     "NS": 1000,
     "REP": 250,
+    "AM": 1000,
     "Image_URL": "https://drive.google.com/uc?id=1nLBuSjV5mCjnf5JT0qnKh0o6H-ry1BxS",
     "Catégorie": "Autre"
   },
@@ -311,6 +345,7 @@
     "NE": 500,
     "NS": 1000,
     "REP": 250,
+    "AM": 1000,
     "Image_URL": "https://drive.google.com/uc?id=1nLBuSjV5mCjnf5JT0qnKh0o6H-ry1BxS",
     "Catégorie": "Autre"
   },
@@ -320,6 +355,7 @@
     "NE": 400,
     "NS": 800,
     "REP": 200,
+    "AM": 1000,
     "Image_URL": "https://drive.google.com/uc?id=1nLBuSjV5mCjnf5JT0qnKh0o6H-ry1BxS",
     "Catégorie": "Autre"
   },
@@ -329,6 +365,7 @@
     "NE": 400,
     "NS": 800,
     "REP": 300,
+    "AM": 1000,
     "Image_URL": "https://drive.google.com/uc?id=1nLBuSjV5mCjnf5JT0qnKh0o6H-ry1BxS",
     "Catégorie": "Bas"
   },
@@ -338,6 +375,7 @@
     "NE": 500,
     "NS": 1000,
     "REP": 300,
+    "AM": 1000,
     "Image_URL": "https://drive.google.com/uc?id=1nLBuSjV5mCjnf5JT0qnKh0o6H-ry1BxS",
     "Catégorie": "Bas"
   },
@@ -347,6 +385,7 @@
     "NE": 500,
     "NS": 1000,
     "REP": 300,
+    "AM": 1000,
     "Image_URL": "https://drive.google.com/uc?id=1nLBuSjV5mCjnf5JT0qnKh0o6H-ry1BxS",
     "Catégorie": "Bas"
   },
@@ -356,6 +395,7 @@
     "NE": 400,
     "NS": 800,
     "REP": 200,
+    "AM": 1000,
     "Image_URL": "https://drive.google.com/uc?id=1nLBuSjV5mCjnf5JT0qnKh0o6H-ry1BxS",
     "Catégorie": "Bas"
   },
@@ -365,6 +405,7 @@
     "NE": 1000,
     "NS": null,
     "REP": 300,
+    "AM": 1000,
     "Image_URL": "https://drive.google.com/uc?id=1nLBuSjV5mCjnf5JT0qnKh0o6H-ry1BxS",
     "Catégorie": "Drap/Grand"
   },
@@ -374,6 +415,7 @@
     "NE": 2000,
     "NS": 3500,
     "REP": 750,
+    "AM": 1000,
     "Image_URL": "https://drive.google.com/uc?id=1nLBuSjV5mCjnf5JT0qnKh0o6H-ry1BxS",
     "Catégorie": "Ensemble/Robe"
   },
@@ -383,6 +425,7 @@
     "NE": 5000,
     "NS": 7500,
     "REP": 1000,
+    "AM": 1000,
     "Image_URL": "https://drive.google.com/uc?id=1nLBuSjV5mCjnf5JT0qnKh0o6H-ry1BxS",
     "Catégorie": "Ensemble/Robe"
   },
@@ -392,6 +435,7 @@
     "NE": 400,
     "NS": 800,
     "REP": 300,
+    "AM": 1000,
     "Image_URL": "https://drive.google.com/uc?id=1nLBuSjV5mCjnf5JT0qnKh0o6H-ry1BxS",
     "Catégorie": "Ensemble/Robe"
   },
@@ -401,6 +445,7 @@
     "NE": 900,
     "NS": null,
     "REP": 300,
+    "AM": 1000,
     "Image_URL": "https://drive.google.com/uc?id=1nLBuSjV5mCjnf5JT0qnKh0o6H-ry1BxS",
     "Catégorie": "Autre"
   },
@@ -410,6 +455,7 @@
     "NE": 400,
     "NS": 800,
     "REP": 200,
+    "AM": 1000,
     "Image_URL": "https://drive.google.com/uc?id=1nLBuSjV5mCjnf5JT0qnKh0o6H-ry1BxS",
     "Catégorie": "Bas"
   },
@@ -419,6 +465,7 @@
     "NE": 400,
     "NS": 800,
     "REP": 200,
+    "AM": 1000,
     "Image_URL": "https://drive.google.com/uc?id=1nLBuSjV5mCjnf5JT0qnKh0o6H-ry1BxS",
     "Catégorie": "Bas"
   },
@@ -428,6 +475,7 @@
     "NE": 400,
     "NS": 800,
     "REP": 200,
+    "AM": 1000,
     "Image_URL": "https://drive.google.com/uc?id=1nLBuSjV5mCjnf5JT0qnKh0o6H-ry1BxS",
     "Catégorie": "Haut"
   },
@@ -437,6 +485,7 @@
     "NE": 1250,
     "NS": 2000,
     "REP": 600,
+    "AM": 1000,
     "Image_URL": "https://drive.google.com/uc?id=1nLBuSjV5mCjnf5JT0qnKh0o6H-ry1BxS",
     "Catégorie": "Autre"
   },
@@ -446,6 +495,7 @@
     "NE": 750,
     "NS": 1500,
     "REP": 350,
+    "AM": 1000,
     "Image_URL": "https://drive.google.com/uc?id=1nLBuSjV5mCjnf5JT0qnKh0o6H-ry1BxS",
     "Catégorie": "Costume/Veste"
   }
