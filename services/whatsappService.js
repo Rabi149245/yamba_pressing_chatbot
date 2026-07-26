@@ -182,7 +182,7 @@ async function handleSubMenuResponses(from, choice) {
     await addOrder(order);
   } catch (e) {
     console.warn('[WhatsApp] ⚠️ Échec ajout commande:', e.message);
-    if (process.env.MAKE_WEBHOOK_URL) await sendToMakeWebhook({ event: 'create_order', payload: order }, 'Orders');
+    if (process.env.MAKE_WEBHOOK_URL) await sendToMakeWebhook(order, 'Orders');
   }
 
   await sendWhatsAppMessage(from, `Commande enregistrée ✅\n${pending.breakdown}\nOption : ${optionLabel}\nTotal : ${order.Total} F`);
@@ -215,7 +215,7 @@ export async function handleIncomingMessage(message) {
   // ✅ Envoi du log vers Make
   if (process.env.MAKE_WEBHOOK_URL) {
     try {
-      await sendToMakeWebhook({ incoming: message }, 'incoming_message');
+      await sendToMakeWebhook(message, 'incoming_message');
       console.info('[Make] ✅ Message entrant envoyé à Make.');
     } catch {
       console.warn('[Make] ⚠️ Envoi du message entrant échoué.');

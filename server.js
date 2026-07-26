@@ -114,13 +114,6 @@ app.post('/webhook', async (req, res) => {
     const body = req.body;
     if (DEBUG_MAKE) console.log('[WEBHOOK INCOMING BODY]', JSON.stringify(body, null, 2));
 
-    // 🔄 Forward vers Make
-    try {
-      await sendToMakeWebhook({ event: 'incoming_message', payload: body }, 'incoming_message');
-    } catch (e) {
-      console.warn('[MAKE] Forward failed →', e.message);
-    }
-
     // 🔍 Extraction du message
     const entry = body.entry?.[0];
     const change = entry?.changes?.[0];
@@ -146,10 +139,7 @@ app.post('/pickup', requireApiKey, async (req, res) => {
     return res.status(500).json({ error: 'Make webhook not configured' });
 
   try {
-    await sendToMakeWebhook(
-      { event: 'create_pickup', payload: { phone, lat, lon, address } },
-      'Pickups'
-    );
+    await sendToMakeWebhook({ phone, lat, lon, address }, 'Pickups');
     if (phone) await pickupService.handlePickupRequest(phone);
     return res.json({ status: 'ok', message: 'Pickup request forwarded' });
   } catch (err) {
@@ -160,7 +150,7 @@ app.post('/pickup', requireApiKey, async (req, res) => {
 
 app.post('/commande', requireApiKey, async (req, res) => {
   try {
-    await sendToMakeWebhook({ event: 'create_order', payload: req.body }, 'Orders');
+    await sendToMakeWebhook(req.body, 'Orders');
     return res.json({ status: 'ok', message: 'Order forwarded to Make' });
   } catch (err) {
     console.error('[Server] ❌ Erreur lors de l’envoi de la commande à Make:', err.message);
@@ -202,7 +192,7 @@ app.delete('/promotions/:id', requireApiKey, async (req, res) => {
 
 app.post('/fidelite', requireApiKey, async (req, res) => {
   try {
-    await sendToMakeWebhook({ event: 'update_points', payload: req.body }, 'PointsTransactions');
+    await sendToMakeWebhook(req.body, 'PointsTransactions');
     return res.json({ status: 'ok' });
   } catch (e) {
     console.error('[Server] ❌ Erreur lors de la mise à jour des points de fidélité:', e.message);
@@ -222,7 +212,7 @@ app.get('/fidelite/:phone', requireApiKey, async (req, res) => {
 
 app.post('/human', requireApiKey, async (req, res) => {
   try {
-    await sendToMakeWebhook({ event: 'create_human_request', payload: req.body }, 'HumanRequest');
+    await sendToMakeWebhook(req.body, 'HumanRequest');
     return res.json({ status: 'ok', message: 'Human request forwarded' });
   } catch (e) {
     console.error('[Server] ❌ Erreur lors de la demande d’assistance humaine:', e.message);
