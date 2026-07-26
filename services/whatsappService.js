@@ -1,6 +1,6 @@
 import axios from 'axios';
 import crypto from 'crypto';
-import { computePriceFromCatalogue, addOrder } from './orderService.js';
+import { computePriceFromCatalogue, addOrder, readCatalog } from './orderService.js';
 import { sendToMakeWebhook } from './makeService.js';
 import * as userService from './userService.js';
 import * as pointsService from './pointsService.js';
@@ -9,6 +9,23 @@ import * as agentsService from './agentsService.js';
 import * as humanService from './humanService.js';
 import * as pickupService from './pickupService.js';
 import * as feedbackService from './feedbackService.js';
+
+const AMIDONNAGE_PRICE = 1000;
+
+// Ordre d'affichage des catégories + identifiants courts (slugs) utilisés dans les
+// id des listes interactives WhatsApp (doivent rester en minuscules, sans accents/slash)
+const CATEGORY_SLUGS = [
+  ['Haut', 'haut'],
+  ['Bas', 'bas'],
+  ['Ensemble/Robe', 'ensemble'],
+  ['Costume/Veste', 'costume'],
+  ['Drap/Grand', 'drap'],
+  ['Autre', 'autre'],
+];
+const SLUG_TO_CATEGORY = Object.fromEntries(CATEGORY_SLUGS.map(([cat, slug]) => [slug, cat]));
+
+const PRICE_LABELS = { NE: 'Lavage à eau', NS: 'Lavage à sec', REP: 'Repassage', AM: 'Amidonnage' };
+const ITEM_LIST_PAGE_SIZE = 9; // laisse une place pour la ligne "page suivante" (max 10 lignes/message)
 
 // ✅ Variables d’environnement
 const TOKEN = process.env.WHATSAPP_TOKEN;
@@ -25,7 +42,7 @@ Je suis votre assistant virtuel. Voici nos services :
 1️⃣ Lavage à sec
 2️⃣ Lavage à eau
 3️⃣ Repassage
-4️⃣ Autres services
+4️⃣ Amidonnage (seul)
 5️⃣ Parler à un agent humain 👩🏽‍💼
 
 ➡ Répondez avec un chiffre (1 à 5) pour choisir un service.
@@ -109,6 +126,105 @@ export async function sendWhatsAppImage(to, imageUrl, caption) {
 }
 
 
+// ✅ Envoi d'une liste interactive WhatsApp (menu déroulant natif)
+async function sendWhatsAppInteractiveList(to, { body, header, footer, buttonText, sections }) {
+  if (!TOKEN || !PHONE_ID) {
+    console.error('[WhatsApp] Token ou Phone ID manquant.');
+    return false;
+  }
+
+  try {
+    const payload = {
+      messaging_product: 'whatsapp',
+      to,
+      type: 'interactive',
+      interactive: {
+        type: 'list',
+        ...(header ? { header: { type: 'text', text: header } } : {}),
+        body: { text: body },
+        ...(footer ? { footer: { text: footer } } : {}),
+        action: { button: buttonText, sections },
+      },
+    };
+    await axios.post(WHATSAPP_API_URL, payload, {
+      headers: { Authorization: `Bearer ${TOKEN}`, 'Content-Type': 'application/json' },
+    });
+    await notificationsService.logNotification(to, body);
+    console.info(`[WhatsApp] ✅ Liste interactive envoyée à ${to}`);
+    return true;
+  } catch (err) {
+    console.error('[WhatsApp] ❌ Erreur envoi liste interactive :', err.response?.data || err.message);
+    return false;
+  }
+}
+
+function truncate(str, max) {
+  if (!str || str.length <= max) return str;
+  return `${str.slice(0, max - 1)}…`;
+}
+
+// ✅ Étape 1 : liste des catégories disponibles pour le type de prix choisi (NE/NS/REP/AM)
+async function sendCategoryList(to, priceType) {
+  const items = await readCatalog();
+  const counts = {};
+  for (const item of items) {
+    if (Number(item[priceType]) > 0) counts[item.Catégorie] = (counts[item.Catégorie] || 0) + 1;
+  }
+
+  const rows = CATEGORY_SLUGS
+    .filter(([cat]) => counts[cat] > 0)
+    .map(([cat, slug]) => ({
+      id: `cat_${slug}`,
+      title: truncate(cat, 24),
+      description: `${counts[cat]} article(s) disponible(s)`,
+    }));
+
+  if (rows.length === 0) {
+    await sendWhatsAppMessage(to, "Aucun article disponible pour ce service pour le moment.");
+    return;
+  }
+
+  await sendWhatsAppInteractiveList(to, {
+    body: `📖 ${PRICE_LABELS[priceType] || priceType} — Choisissez une catégorie d'articles :`,
+    buttonText: 'Catégories',
+    sections: [{ title: 'Catégories', rows }],
+  });
+}
+
+// ✅ Étape 2 : liste des articles d'une catégorie (paginée par 9, avec une ligne "page suivante")
+async function sendItemList(to, category, priceType, page = 0) {
+  const all = (await readCatalog()).filter((i) => i.Catégorie === category && Number(i[priceType]) > 0);
+  const start = page * ITEM_LIST_PAGE_SIZE;
+  const pageItems = all.slice(start, start + ITEM_LIST_PAGE_SIZE);
+  const hasNext = start + ITEM_LIST_PAGE_SIZE < all.length;
+
+  if (pageItems.length === 0) {
+    await sendWhatsAppMessage(to, "Aucun article trouvé dans cette catégorie. Tapez '*' pour revenir au menu.");
+    return;
+  }
+
+  const slug = CATEGORY_SLUGS.find(([cat]) => cat === category)?.[1] || 'autre';
+  const rows = pageItems.map((i) => ({
+    id: `item_${i.N}`,
+    title: truncate(`${i.N}. ${i.Désignation}`, 24),
+    description: truncate(`${i.Désignation} — ${i[priceType]} FCFA`, 72),
+  }));
+
+  if (hasNext) {
+    rows.push({
+      id: `catpage_${slug}_${page + 1}`,
+      title: '➡️ Page suivante',
+      description: `Voir plus d'articles (${category})`,
+    });
+  }
+
+  await sendWhatsAppInteractiveList(to, {
+    body: `📦 ${category}${page > 0 ? ` (page ${page + 1})` : ''} — Sélectionnez un article :`,
+    buttonText: 'Articles',
+    sections: [{ title: truncate(category, 24), rows }],
+  });
+}
+
 // ✅ Sélection de l'article après le choix d'un service (1/2/3)
 // state.priceType a été fixé par le menu principal (NS = lavage à sec, NE = lavage à eau, REP = repassage)
 async function handleItemSelection(from, state, body) {
@@ -130,6 +246,10 @@ async function handleItemSelection(from, state, body) {
     return;
   }
 
+  // Service 4 (amidonnage) est déjà lui-même le service d'amidonnage : pas de question
+  // d'ajout d'amidonnage à poser, on passe directement au choix dépôt/enlèvement.
+  const isAmidonnageOnly = state.service === 'amidonnage';
+
   await userService.saveUserState(from, {
     pendingItem: {
       itemNumber,
@@ -138,13 +258,21 @@ async function handleItemSelection(from, state, body) {
       description: res.item.Désignation,
       breakdown: res.breakdown,
       total: res.total,
+      isAmidonnageOnly,
     },
   });
 
-  await sendWhatsAppMessage(
-    from,
-    `🧾 ${res.breakdown}\nTotal : ${res.total} FCFA\n\nComment souhaitez-vous procéder ?\n1️⃣ Dépôt au pressing → répondez "1_dep"\n2️⃣ Enlèvement à domicile → répondez "2_pickup"`
-  );
+  if (isAmidonnageOnly) {
+    await sendWhatsAppMessage(
+      from,
+      `🧾 ${res.breakdown}\nTotal : ${res.total} FCFA\n\nComment souhaitez-vous procéder ?\n1️⃣ Dépôt au pressing → répondez "1_dep"\n2️⃣ Enlèvement à domicile → répondez "2_pickup"`
+    );
+  } else {
+    await sendWhatsAppMessage(
+      from,
+      `🧾 ${res.breakdown}\nTotal : ${res.total} FCFA\n\nSouhaitez-vous ajouter l'amidonnage pour cet article (+${AMIDONNAGE_PRICE} FCFA) ?\n1️⃣ Oui → répondez "1_oui"\n2️⃣ Non → répondez "2_non"`
+    );
+  }
 }
 
 // ✅ Gestion des sous-menus (finalise la commande de l'article en attente)
@@ -157,18 +285,47 @@ async function handleSubMenuResponses(from, choice) {
     return;
   }
 
-  const optionLabel =
-    choice === '1_dep' ? 'Dépôt au pressing' :
-    choice === '2_pickup' ? 'Enlèvement à domicile' :
-    choice === '1_oui' ? 'Avec amidonnage' :
-    'Sans amidonnage';
+  // Étape 1/2 (uniquement pour les services 1/2/3) : décision amidonnage avant le choix dépôt/enlèvement
+  if (choice === '1_oui' || choice === '2_non') {
+    if (pending.isAmidonnageOnly) {
+      await sendWhatsAppMessage(from, `Réponse inattendue. Répondez "1_dep" ou "2_pickup".`);
+      return;
+    }
+
+    const withStarch = choice === '1_oui';
+    const amidonnageTotal = withStarch ? AMIDONNAGE_PRICE * pending.qty : 0;
+    const updatedPending = {
+      ...pending,
+      withStarch,
+      total: pending.total + amidonnageTotal,
+    };
+    await userService.saveUserState(from, { pendingItem: updatedPending });
+
+    await sendWhatsAppMessage(
+      from,
+      `${withStarch ? `Amidonnage ajouté (+${amidonnageTotal} FCFA). ` : ''}Total : ${updatedPending.total} FCFA\n\nComment souhaitez-vous procéder ?\n1️⃣ Dépôt au pressing → répondez "1_dep"\n2️⃣ Enlèvement à domicile → répondez "2_pickup"`
+    );
+    return;
+  }
+
+  // Étape 2/2 : dépôt ou enlèvement — on exige la décision amidonnage d'abord si applicable
+  if (!pending.isAmidonnageOnly && pending.withStarch === undefined) {
+    await sendWhatsAppMessage(from, `Merci de préciser d'abord si vous souhaitez l'amidonnage : répondez "1_oui" ou "2_non".`);
+    return;
+  }
+
+  const deliveryLabel = choice === '1_dep' ? 'Dépôt au pressing' : 'Enlèvement à domicile';
+  const starchLabel = pending.isAmidonnageOnly
+    ? 'Service amidonnage'
+    : (pending.withStarch ? `Avec amidonnage (+${AMIDONNAGE_PRICE} FCFA)` : 'Sans amidonnage');
 
   const order = {
     ClientPhone: from,
     ItemsJSON: [{
       N: pending.itemNumber,
       description: pending.description,
-      option: optionLabel,
+      option: deliveryLabel,
+      amidonnage: starchLabel,
       priceType: pending.priceType,
       qty: pending.qty,
       total: pending.total,
@@ -185,7 +342,7 @@ async function handleSubMenuResponses(from, choice) {
     if (process.env.MAKE_WEBHOOK_URL) await sendToMakeWebhook({ ...order, ItemsJSON: JSON.stringify(order.ItemsJSON) }, 'Orders');
   }
 
-  await sendWhatsAppMessage(from, `Commande enregistrée ✅\n${pending.breakdown}\nOption : ${optionLabel}\nTotal : ${order.Total} F`);
+  await sendWhatsAppMessage(from, `Commande enregistrée ✅\n${pending.breakdown}\nOption : ${deliveryLabel}\nAmidonnage : ${starchLabel}\nTotal : ${order.Total} F`);
 
   if (choice === '2_pickup') {
     try {
@@ -210,7 +367,9 @@ export async function handleIncomingMessage(message) {
   const from = message.from;
   if (!from) return;
 
-  const body = (message.text?.body || '').trim().toLowerCase();
+  const isListReply = message.type === 'interactive' && message.interactive?.type === 'list_reply';
+  const rawBody = isListReply ? (message.interactive.list_reply?.id || '') : (message.text?.body || '');
+  const body = rawBody.trim().toLowerCase();
 
   // ✅ Envoi du log vers Make
   if (process.env.MAKE_WEBHOOK_URL) {
@@ -263,7 +422,56 @@ export async function handleIncomingMessage(message) {
 
   const state = await userService.getUserState(from);
 
-  // ✅ Sélection d'un article de catalogue après avoir choisi un service (1/2/3)
+  // ✅ Quantité demandée après sélection d'un article via la liste interactive
+  if (state?.awaitingQtyFor && /^\d+$/.test(body)) {
+    const itemNumber = state.awaitingQtyFor;
+    await userService.saveUserState(from, { awaitingQtyFor: null });
+    await handleItemSelection(from, state, `${itemNumber},${body}`);
+    await userService.updateUserLastMessage(from, now);
+    return;
+  }
+
+  // ✅ Choix d'une catégorie (liste interactive)
+  if (body.startsWith('cat_')) {
+    const category = SLUG_TO_CATEGORY[body.slice(4)];
+    if (category && state?.priceType) {
+      await sendItemList(from, category, state.priceType, 0);
+    } else {
+      await sendWhatsAppMessage(from, "Choix invalide ou expiré. Tapez '*' pour revenir au menu.");
+    }
+    await userService.updateUserLastMessage(from, now);
+    return;
+  }
+
+  // ✅ Page suivante d'une catégorie (liste interactive)
+  if (body.startsWith('catpage_')) {
+    const match = body.match(/^catpage_([a-z]+)_(\d+)$/);
+    const category = match ? SLUG_TO_CATEGORY[match[1]] : null;
+    if (category && state?.priceType) {
+      await sendItemList(from, category, state.priceType, parseInt(match[2], 10));
+    } else {
+      await sendWhatsAppMessage(from, "Choix invalide ou expiré. Tapez '*' pour revenir au menu.");
+    }
+    await userService.updateUserLastMessage(from, now);
+    return;
+  }
+
+  // ✅ Sélection d'un article (liste interactive) → on demande la quantité
+  if (body.startsWith('item_')) {
+    const itemNumber = parseInt(body.slice(5), 10);
+    const items = state?.priceType ? await readCatalog() : [];
+    const item = items.find((i) => Number(i.N) === itemNumber);
+    if (item && state?.priceType) {
+      await userService.saveUserState(from, { awaitingQtyFor: itemNumber });
+      await sendWhatsAppMessage(from, `Quelle quantité pour "${item.Désignation}" ? Répondez avec un nombre (ex: 2).`);
+    } else {
+      await sendWhatsAppMessage(from, "Article introuvable ou choix expiré. Tapez '*' pour revenir au menu.");
+    }
+    await userService.updateUserLastMessage(from, now);
+    return;
+  }
+
+  // ✅ Sélection directe d'un article de catalogue par texte (ex: 8,2) après avoir choisi un service
   if (state?.priceType && /^\d+(\s*,\s*\d+)?$/.test(body)) {
     await handleItemSelection(from, state, body);
     await userService.updateUserLastMessage(from, now);
@@ -273,27 +481,23 @@ export async function handleIncomingMessage(message) {
   // ✅ Menu principal
   switch (body) {
     case '1':
-      await sendWhatsAppImage(from, 'https://exemple.com/lavage_sec.jpg', 'Voici les prix pour le lavage à sec.');
       await userService.updateUserState(from, { service: 'lavage_sec', priceType: 'NS' });
-      await sendWhatsAppMessage(from, "Indiquez le numéro de l'article du catalogue et la quantité (ex: 8,2).");
+      await sendCategoryList(from, 'NS');
       await userService.updateUserLastMessage(from, now);
       return;
     case '2':
-      await sendWhatsAppImage(from, 'https://exemple.com/lavage_eau.jpg', 'Voici les prix pour le lavage à eau.');
       await userService.updateUserState(from, { service: 'lavage_eau', priceType: 'NE' });
-      await sendWhatsAppMessage(from, "Indiquez le numéro de l'article du catalogue et la quantité (ex: 8,2).");
+      await sendCategoryList(from, 'NE');
       await userService.updateUserLastMessage(from, now);
       return;
     case '3':
-      await sendWhatsAppImage(from, 'https://exemple.com/repassage.jpg', 'Voici les prix pour le repassage.');
       await userService.updateUserState(from, { service: 'repassage', priceType: 'REP' });
-      await sendWhatsAppMessage(from, "Indiquez le numéro de l'article du catalogue et la quantité (ex: 8,2).");
+      await sendCategoryList(from, 'REP');
       await userService.updateUserLastMessage(from, now);
       return;
     case '4':
-      await sendWhatsAppImage(from, 'https://exemple.com/autres_services.jpg', 'Services supplémentaires.');
-      await userService.updateUserState(from, { service: 'autres_services' });
-      await sendWhatsAppMessage(from, "Envoyez : numéro de l'article, type (NE/NS/REP), quantité. Exemple : 13,NE,1");
+      await userService.updateUserState(from, { service: 'amidonnage', priceType: 'AM' });
+      await sendCategoryList(from, 'AM');
       await userService.updateUserLastMessage(from, now);
       return;
     case '5': {
