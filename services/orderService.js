@@ -56,10 +56,7 @@ export async function computePriceFromCatalogue(index, priceType, qty = 1) {
   // Journalisation vers Make
   if (process.env.MAKE_WEBHOOK_URL) {
     try {
-      const res = await sendToMakeWebhook(
-        { event: 'log_order_item', payload: { item, priceType, qty, total } },
-        'OrderItems'
-      );
+      const res = await sendToMakeWebhook({ item, priceType, qty, total }, 'OrderItems');
       if (process.env.DEBUG_MAKE === 'true') {
         console.log('[OrderService][DEBUG] Envoi à Make réussi (computePriceFromCatalogue)');
       }
@@ -77,7 +74,7 @@ export async function computePriceFromCatalogue(index, priceType, qty = 1) {
 export async function addOrder(order) {
   if (process.env.MAKE_WEBHOOK_URL) {
     try {
-      const res = await sendToMakeWebhook({ event: 'create_order', payload: order }, 'Orders');
+      const res = await sendToMakeWebhook(order, 'Orders');
       if (process.env.DEBUG_MAKE === 'true') {
         console.log('[OrderService][DEBUG] Commande envoyée à Make');
       }
